@@ -67,8 +67,8 @@ export function transformLineStringForwardToLineString(
   const segments = pointsToSegments(points, false)
   const extendedSegments =
     recursivelyAddMidpointsWithDestinationMidPointFromTransform(
-      transformer,
       segments,
+      (p) => transformer.transformForward(p),
       options
     )
 
@@ -92,8 +92,8 @@ export function transformLineStringBackwardToLineString(
   const segments = pointsToSegments(points, false)
   const extendendSegements =
     recursivelyAddMidpointsWithSourceMidPointFromTransform(
-      transformer,
       segments,
+      (p) => transformer.transformBackward(p),
       options
     )
 
@@ -115,8 +115,8 @@ export function transformRingForwardToRing(
   const segments = pointsToSegments(points, true)
   const extendedSegments =
     recursivelyAddMidpointsWithDestinationMidPointFromTransform(
-      transformer,
       segments,
+      (p) => transformer.transformForward(p),
       options
     )
 
@@ -140,8 +140,8 @@ export function transformRingBackwardToRing(
   const segments = pointsToSegments(points, true)
   const extendendSegements =
     recursivelyAddMidpointsWithSourceMidPointFromTransform(
-      transformer,
       segments,
+      (p) => transformer.transformBackward(p),
       options
     )
 
@@ -193,8 +193,8 @@ function segmentsToPoints(segments: Segment[], close = false): TransformGcp[] {
 }
 
 function recursivelyAddMidpointsWithDestinationMidPointFromTransform(
-  transformer: GcpTransformer,
   segments: Segment[],
+  transformFunction: (p: Point) => Point,
   options: TransformOptions
 ) {
   if (options.maxDepth <= 0) {
@@ -204,8 +204,8 @@ function recursivelyAddMidpointsWithDestinationMidPointFromTransform(
   return segments
     .map((segment) =>
       addMidpointWithDestinationMidPointFromTransform(
-        transformer,
         segment,
+        transformFunction,
         options,
         0
       )
@@ -214,8 +214,8 @@ function recursivelyAddMidpointsWithDestinationMidPointFromTransform(
 }
 
 function recursivelyAddMidpointsWithSourceMidPointFromTransform(
-  transformer: GcpTransformer,
   segments: Segment[],
+  transformFunction: (p: Point) => Point,
   options: TransformOptions
 ) {
   if (options.maxDepth <= 0) {
@@ -225,8 +225,8 @@ function recursivelyAddMidpointsWithSourceMidPointFromTransform(
   return segments
     .map((segment) =>
       addMidpointWithSourceMidPointFromTransform(
-        transformer,
         segment,
+        transformFunction,
         options,
         0
       )
@@ -235,8 +235,8 @@ function recursivelyAddMidpointsWithSourceMidPointFromTransform(
 }
 
 function addMidpointWithDestinationMidPointFromTransform(
-  transformer: GcpTransformer,
   segment: Segment,
+  transformFunction: (p: Point) => Point,
   options: TransformOptions,
   depth: number
 ): Segment | Segment[] {
@@ -261,8 +261,7 @@ function addMidpointWithDestinationMidPointFromTransform(
     segment.from.destination,
     segment.to.destination
   )
-  const destinationMidPointFromTransform =
-    transformer.transformForward(sourceMidPoint)
+  const destinationMidPointFromTransform = transformFunction(sourceMidPoint)
 
   const destinationDistanceFunction = options.destinationIsGeographic
     ? getWorldDistance
@@ -288,14 +287,14 @@ function addMidpointWithDestinationMidPointFromTransform(
 
     return [
       addMidpointWithDestinationMidPointFromTransform(
-        transformer,
         { from: segment.from, to: newSegmentMidpoint },
+        transformFunction,
         options,
         depth + 1
       ),
       addMidpointWithDestinationMidPointFromTransform(
-        transformer,
         { from: newSegmentMidpoint, to: segment.to },
+        transformFunction,
         options,
         depth + 1
       )
@@ -306,8 +305,8 @@ function addMidpointWithDestinationMidPointFromTransform(
 }
 
 function addMidpointWithSourceMidPointFromTransform(
-  transformer: GcpTransformer,
   segment: Segment,
+  transformFunction: (p: Point) => Point,
   options: TransformOptions,
   depth: number
 ): Segment | Segment[] {
@@ -332,7 +331,7 @@ function addMidpointWithSourceMidPointFromTransform(
     segment.from.source,
     segment.to.source
   )
-  const sourceMidPointFromTransform = transformer.transformBackward(
+  const sourceMidPointFromTransform = transformFunction(
     destinationMidPoint as Point
   )
 
@@ -359,14 +358,14 @@ function addMidpointWithSourceMidPointFromTransform(
 
     return [
       addMidpointWithSourceMidPointFromTransform(
-        transformer,
         { from: segment.from, to: newSegmentMidpoint },
+        transformFunction,
         options,
         depth + 1
       ),
       addMidpointWithSourceMidPointFromTransform(
-        transformer,
         { from: newSegmentMidpoint, to: segment.to },
+        transformFunction,
         options,
         depth + 1
       )
