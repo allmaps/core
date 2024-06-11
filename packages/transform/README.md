@@ -485,23 +485,23 @@ Creating a transformer (with 10 points) (and transform 1 point)
 
 | Type              | Options    | Ops/s  |
 | ----------------- | ---------- | ------ |
-| `helmert`         |            | 64004  |
-| `polynomial`      | `order: 1` | 134372 |
-| `polynomial`      | `order: 2` | 66312  |
-| `polynomial`      | `order: 3` | 26601  |
-| `thinPlateSpline` |            | 20422  |
-| `projective`      |            | 27430  |
+| `helmert`         |            | 63499  |
+| `polynomial`      | `order: 1` | 133824 |
+| `polynomial`      | `order: 2` | 66501  |
+| `polynomial`      | `order: 3` | 26750  |
+| `thinPlateSpline` |            | 20487  |
+| `projective`      |            | 27581  |
 
 Using a transformer (with 10 points) to transform 1 point
 
 | Type              | Options    | Ops/s    |
 | ----------------- | ---------- | -------- |
-| `helmert`         |            | 13062520 |
-| `polynomial`      | `order: 1` | 12613152 |
-| `polynomial`      | `order: 2` | 12052005 |
-| `polynomial`      | `order: 3` | 3440201  |
-| `thinPlateSpline` |            | 3037781  |
-| `projective`      |            | 11950188 |
+| `helmert`         |            | 21612153 |
+| `polynomial`      | `order: 1` | 19993234 |
+| `polynomial`      | `order: 2` | 19887376 |
+| `polynomial`      | `order: 3` | 3930665  |
+| `thinPlateSpline` |            | 2931361  |
+| `projective`      |            | 20386139 |
 
 See [`./bench/index.js`](`./bench/index.js`).
 

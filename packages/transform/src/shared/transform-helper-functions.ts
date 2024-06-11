@@ -15,12 +15,11 @@ import type { TransformGcp, Segment, TransformOptions } from './types.js'
 
 import type { Point, LineString, Ring, Polygon } from '@allmaps/types'
 
-export function mergeOptions(
-  optionsFromTransform?: Partial<TransformOptions>,
-  optionsFromGCPTransformer?: Partial<TransformOptions>,
-  optionsFromDataFormat?: Partial<TransformOptions>
+export function mergeTransformOptions(
+  partialTransformOptions0?: Partial<TransformOptions>,
+  partialTransformOptions1?: Partial<TransformOptions>
 ): TransformOptions {
-  const optionsDefault: TransformOptions = {
+  const defaultTransformOptions: TransformOptions = {
     maxOffsetRatio: 0,
     maxDepth: 0,
     destinationIsGeographic: false,
@@ -30,11 +29,26 @@ export function mergeOptions(
     evaluationType: 'function'
   }
 
-  return {
-    ...optionsDefault,
-    ...optionsFromDataFormat,
-    ...optionsFromGCPTransformer,
-    ...optionsFromTransform
+  // This function is a little expensive and is executed for every point
+  // so small speed-ups like this make for a 50% speed increase when transforming a lot of points
+  if (!partialTransformOptions0 && !partialTransformOptions1) {
+    return defaultTransformOptions
+  } else if (partialTransformOptions0 && !partialTransformOptions1) {
+    return {
+      ...defaultTransformOptions,
+      ...partialTransformOptions0
+    }
+  } else if (!partialTransformOptions0 && partialTransformOptions1) {
+    return {
+      ...defaultTransformOptions,
+      ...partialTransformOptions1
+    }
+  } else {
+    return {
+      ...defaultTransformOptions,
+      ...partialTransformOptions0,
+      ...partialTransformOptions1
+    }
   }
 }
 
