@@ -6,9 +6,19 @@ import type { Point } from '@allmaps/types'
  */
 export type TransformGcp = { source: Point; destination: Point }
 
+export type RefinementGcp = { unrefined: Point; refined: Point }
+
 export type Segment = {
-  from: TransformGcp
-  to: TransformGcp
+  from: RefinementGcp
+  to: RefinementGcp
+}
+
+export type RefinementOptions = {
+  maxOffsetRatio: number
+  maxDepth: number
+  unrefinedMidPointFunction: (p0: Point, p1: Point) => Point
+  refinedMidPointFunction: (p0: Point, p1: Point) => Point
+  refinedDistanceFunction: (p0: Point, p1: Point) => number
 }
 
 /** Transformation type. */

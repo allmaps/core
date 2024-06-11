@@ -11,11 +11,16 @@ import {
 
 import GcpTransformer from '../transformer'
 
-import type { TransformGcp, Segment, TransformOptions } from './types.js'
+import type {
+  Segment,
+  TransformOptions,
+  RefinementGcp,
+  RefinementOptions
+} from './types.js'
 
 import type { Point, LineString, Ring, Polygon } from '@allmaps/types'
 
-export function mergeTransformOptions(
+export function mergeTransformOptionsAndSetDetault(
   partialTransformOptions0?: Partial<TransformOptions>,
   partialTransformOptions1?: Partial<TransformOptions>
 ): TransformOptions {
@@ -52,16 +57,56 @@ export function mergeTransformOptions(
   }
 }
 
+export function refinementOptionsForwardTransform(
+  transformOptions: TransformOptions
+): RefinementOptions {
+  return {
+    maxOffsetRatio: transformOptions.maxOffsetRatio,
+    maxDepth: transformOptions.maxDepth,
+    unrefinedMidPointFunction: transformOptions.sourceIsGeographic
+      ? (point0: Point, point1: Point) =>
+          getWorldMidpoint(point0, point1).geometry.coordinates as Point
+      : midPoint,
+    refinedMidPointFunction: transformOptions.destinationIsGeographic
+      ? (point0: Point, point1: Point) =>
+          getWorldMidpoint(point0, point1).geometry.coordinates as Point
+      : midPoint,
+    refinedDistanceFunction: transformOptions.destinationIsGeographic
+      ? getWorldDistance
+      : distance
+  }
+}
+
+export function refinementOptionsBackwardTransform(
+  transformOptions: TransformOptions
+): RefinementOptions {
+  return {
+    maxOffsetRatio: transformOptions.maxOffsetRatio,
+    maxDepth: transformOptions.maxDepth,
+    unrefinedMidPointFunction: transformOptions.destinationIsGeographic
+      ? (point0: Point, point1: Point) =>
+          getWorldMidpoint(point0, point1).geometry.coordinates as Point
+      : midPoint,
+    refinedMidPointFunction: transformOptions.sourceIsGeographic
+      ? (point0: Point, point1: Point) =>
+          getWorldMidpoint(point0, point1).geometry.coordinates as Point
+      : midPoint,
+    refinedDistanceFunction: transformOptions.sourceIsGeographic
+      ? getWorldDistance
+      : distance
+  }
+}
+
 export function transformLineStringForwardToLineString(
   transformer: GcpTransformer,
   lineString: LineString,
-  options: TransformOptions
+  transformOptions: TransformOptions
 ): LineString {
   lineString = conformLineString(lineString)
 
-  const points = lineString.map((point) => ({
-    source: point,
-    destination: transformer.transformForward(point)
+  const points: RefinementGcp[] = lineString.map((point) => ({
+    unrefined: point,
+    refined: transformer.transformForward(point)
   }))
 
   const segments = pointsToSegments(points, false)
@@ -69,24 +114,22 @@ export function transformLineStringForwardToLineString(
     recursivelyAddMidpointsWithDestinationMidPointFromTransform(
       segments,
       (p) => transformer.transformForward(p),
-      options
+      refinementOptionsForwardTransform(transformOptions)
     )
 
-  return segmentsToPoints(extendedSegments, true).map(
-    (point) => point.destination
-  )
+  return segmentsToPoints(extendedSegments, true).map((point) => point.refined)
 }
 
 export function transformLineStringBackwardToLineString(
   transformer: GcpTransformer,
   lineString: LineString,
-  options: TransformOptions
+  transformOptions: TransformOptions
 ): LineString {
   lineString = conformLineString(lineString)
 
-  const points: TransformGcp[] = lineString.map((point) => ({
-    source: transformer.transformBackward(point),
-    destination: point
+  const points: RefinementGcp[] = lineString.map((point) => ({
+    unrefined: point,
+    refined: transformer.transformBackward(point)
   }))
 
   const segments = pointsToSegments(points, false)
@@ -94,22 +137,24 @@ export function transformLineStringBackwardToLineString(
     recursivelyAddMidpointsWithSourceMidPointFromTransform(
       segments,
       (p) => transformer.transformBackward(p),
-      options
+      refinementOptionsBackwardTransform(transformOptions)
     )
 
-  return segmentsToPoints(extendendSegements, true).map((point) => point.source)
+  return segmentsToPoints(extendendSegements, true).map(
+    (point) => point.refined
+  )
 }
 
 export function transformRingForwardToRing(
   transformer: GcpTransformer,
   ring: Ring,
-  options: TransformOptions
+  transformOptions: TransformOptions
 ): Ring {
   ring = conformRing(ring)
 
-  const points = ring.map((point) => ({
-    source: point,
-    destination: transformer.transformForward(point)
+  const points: RefinementGcp[] = ring.map((point) => ({
+    unrefined: point,
+    refined: transformer.transformForward(point)
   }))
 
   const segments = pointsToSegments(points, true)
@@ -117,24 +162,22 @@ export function transformRingForwardToRing(
     recursivelyAddMidpointsWithDestinationMidPointFromTransform(
       segments,
       (p) => transformer.transformForward(p),
-      options
+      refinementOptionsForwardTransform(transformOptions)
     )
 
-  return segmentsToPoints(extendedSegments, false).map(
-    (point) => point.destination
-  )
+  return segmentsToPoints(extendedSegments, false).map((point) => point.refined)
 }
 
 export function transformRingBackwardToRing(
   transformer: GcpTransformer,
   ring: Ring,
-  options: TransformOptions
+  transformOptions: TransformOptions
 ): Ring {
   ring = conformRing(ring)
 
-  const points: TransformGcp[] = ring.map((point) => ({
-    source: transformer.transformBackward(point),
-    destination: point
+  const points: RefinementGcp[] = ring.map((point) => ({
+    unrefined: point,
+    refined: transformer.transformBackward(point)
   }))
 
   const segments = pointsToSegments(points, true)
@@ -142,11 +185,11 @@ export function transformRingBackwardToRing(
     recursivelyAddMidpointsWithSourceMidPointFromTransform(
       segments,
       (p) => transformer.transformBackward(p),
-      options
+      refinementOptionsBackwardTransform(transformOptions)
     )
 
   return segmentsToPoints(extendendSegements, false).map(
-    (point) => point.source
+    (point) => point.refined
   )
 }
 
@@ -170,7 +213,7 @@ export function transformPolygonBackwardToPolygon(
   })
 }
 
-function pointsToSegments(points: TransformGcp[], close = false): Segment[] {
+function pointsToSegments(points: RefinementGcp[], close = false): Segment[] {
   const segmentCount = points.length - (close ? 0 : 1)
 
   const segments: Segment[] = []
@@ -184,7 +227,7 @@ function pointsToSegments(points: TransformGcp[], close = false): Segment[] {
   return segments
 }
 
-function segmentsToPoints(segments: Segment[], close = false): TransformGcp[] {
+function segmentsToPoints(segments: Segment[], close = false): RefinementGcp[] {
   const points = segments.map((segment) => segment.from)
   if (close) {
     points.push(segments[segments.length - 1].to)
@@ -195,7 +238,7 @@ function segmentsToPoints(segments: Segment[], close = false): TransformGcp[] {
 function recursivelyAddMidpointsWithDestinationMidPointFromTransform(
   segments: Segment[],
   transformFunction: (p: Point) => Point,
-  options: TransformOptions
+  options: RefinementOptions
 ) {
   if (options.maxDepth <= 0) {
     return segments
@@ -216,7 +259,7 @@ function recursivelyAddMidpointsWithDestinationMidPointFromTransform(
 function recursivelyAddMidpointsWithSourceMidPointFromTransform(
   segments: Segment[],
   transformFunction: (p: Point) => Point,
-  options: TransformOptions
+  options: RefinementOptions
 ) {
   if (options.maxDepth <= 0) {
     return segments
@@ -237,52 +280,39 @@ function recursivelyAddMidpointsWithSourceMidPointFromTransform(
 function addMidpointWithDestinationMidPointFromTransform(
   segment: Segment,
   transformFunction: (p: Point) => Point,
-  options: TransformOptions,
+  options: RefinementOptions,
   depth: number
 ): Segment | Segment[] {
   if (depth >= options.maxDepth) {
     return segment
   }
-
-  const sourceMidPointFunction = options.sourceIsGeographic
-    ? (point1: Point, point2: Point) =>
-        getWorldMidpoint(point1, point2).geometry.coordinates as Point
-    : midPoint
-  const sourceMidPoint = sourceMidPointFunction(
-    segment.from.source,
-    segment.to.source
+  const unrefinedMidPoint = options.unrefinedMidPointFunction(
+    segment.from.unrefined,
+    segment.to.unrefined
   )
-
-  const destinationMidPointFunction = options.destinationIsGeographic
-    ? (point1: Point, point2: Point) =>
-        getWorldMidpoint(point1, point2).geometry.coordinates as Point
-    : midPoint
-  const destinationMidPoint = destinationMidPointFunction(
-    segment.from.destination,
-    segment.to.destination
+  const refinedMidPoint = options.refinedMidPointFunction(
+    segment.from.refined,
+    segment.to.refined
   )
-  const destinationMidPointFromTransform = transformFunction(sourceMidPoint)
+  const refinedMidPointFromTransform = transformFunction(unrefinedMidPoint)
 
-  const destinationDistanceFunction = options.destinationIsGeographic
-    ? getWorldDistance
-    : distance
-  const segmentDestinationDistance = destinationDistanceFunction(
-    segment.from.destination,
-    segment.to.destination
+  const segmentRefinedDistance = options.refinedDistanceFunction(
+    segment.from.refined,
+    segment.to.refined
   )
-  const destinationMidPointsDistance = destinationDistanceFunction(
-    destinationMidPoint,
-    destinationMidPointFromTransform
+  const refinedMidPointsDistance = options.refinedDistanceFunction(
+    refinedMidPoint,
+    refinedMidPointFromTransform
   )
 
   if (
-    destinationMidPointsDistance / segmentDestinationDistance >
+    refinedMidPointsDistance / segmentRefinedDistance >
       options.maxOffsetRatio &&
-    segmentDestinationDistance > 0
+    segmentRefinedDistance > 0
   ) {
-    const newSegmentMidpoint: TransformGcp = {
-      source: sourceMidPoint,
-      destination: destinationMidPointFromTransform
+    const newSegmentMidpoint: RefinementGcp = {
+      unrefined: unrefinedMidPoint,
+      refined: refinedMidPointFromTransform
     }
 
     return [
@@ -307,53 +337,42 @@ function addMidpointWithDestinationMidPointFromTransform(
 function addMidpointWithSourceMidPointFromTransform(
   segment: Segment,
   transformFunction: (p: Point) => Point,
-  options: TransformOptions,
+  options: RefinementOptions,
   depth: number
 ): Segment | Segment[] {
   if (depth >= options.maxDepth) {
     return segment
   }
 
-  const destinationMidPointFunction = options.destinationIsGeographic
-    ? (point1: Point, point2: Point) =>
-        getWorldMidpoint(point1, point2).geometry.coordinates as Point
-    : midPoint
-  const destinationMidPoint = destinationMidPointFunction(
-    segment.from.destination,
-    segment.to.destination
+  const unrefinedMidPoint = options.unrefinedMidPointFunction(
+    segment.from.unrefined,
+    segment.to.unrefined
+  )
+  const refinedMidPoint = options.refinedMidPointFunction(
+    segment.from.refined,
+    segment.to.refined
+  )
+  const refinedMidPointFromTransform = transformFunction(
+    unrefinedMidPoint as Point
   )
 
-  const sourceMidPointFunction = options.sourceIsGeographic
-    ? (point1: Point, point2: Point) =>
-        getWorldMidpoint(point1, point2).geometry.coordinates as Point
-    : midPoint
-  const sourceMidPoint = sourceMidPointFunction(
-    segment.from.source,
-    segment.to.source
+  const segmentRefinedDistance = options.refinedDistanceFunction(
+    segment.from.refined,
+    segment.to.refined
   )
-  const sourceMidPointFromTransform = transformFunction(
-    destinationMidPoint as Point
-  )
-
-  const sourceDistanceFunction = options.sourceIsGeographic
-    ? getWorldDistance
-    : distance
-  const segmentSourceDistance = sourceDistanceFunction(
-    segment.from.source,
-    segment.to.source
-  )
-  const sourceMidPointsDistance = sourceDistanceFunction(
-    sourceMidPoint,
-    sourceMidPointFromTransform
+  const refinedMidPointsDistance = options.refinedDistanceFunction(
+    refinedMidPoint,
+    refinedMidPointFromTransform
   )
 
   if (
-    sourceMidPointsDistance / segmentSourceDistance > options.maxOffsetRatio &&
-    segmentSourceDistance > 0
+    refinedMidPointsDistance / segmentRefinedDistance >
+      options.maxOffsetRatio &&
+    segmentRefinedDistance > 0
   ) {
-    const newSegmentMidpoint: TransformGcp = {
-      source: sourceMidPointFromTransform,
-      destination: destinationMidPoint
+    const newSegmentMidpoint: RefinementGcp = {
+      refined: refinedMidPointFromTransform,
+      unrefined: unrefinedMidPoint
     }
 
     return [
