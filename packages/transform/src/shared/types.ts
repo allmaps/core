@@ -8,7 +8,7 @@ export type TransformGcp = { source: Point; destination: Point }
 
 export type RefinementGcp = { unrefined: Point; refined: Point }
 
-export type Segment = {
+export type RefinementSegment = {
   from: RefinementGcp
   to: RefinementGcp
 }

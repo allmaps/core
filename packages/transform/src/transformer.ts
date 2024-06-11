@@ -204,24 +204,24 @@ export default class GcpTransformer {
         )
       } else if (isLineString(input)) {
         return transformLineStringForwardToLineString(
-          this,
           input,
+          this,
           mergedOptions
         )
       } else if (isGeojsonLineString(input)) {
         return transformLineStringForwardToLineString(
-          this,
           convertGeojsonLineStringToLineString(input),
+          this,
           mergeTransformOptionsAndSetDetault(mergedOptions, {
             sourceIsGeographic: true
           })
         )
       } else if (isPolygon(input)) {
-        return transformPolygonForwardToPolygon(this, input, mergedOptions)
+        return transformPolygonForwardToPolygon(input, this, mergedOptions)
       } else if (isGeojsonPolygon(input)) {
         return transformPolygonForwardToPolygon(
-          this,
           convertGeojsonPolygonToPolygon(input),
+          this,
           mergeTransformOptionsAndSetDetault(mergedOptions, {
             sourceIsGeographic: true
           })
@@ -310,8 +310,8 @@ export default class GcpTransformer {
       } else if (isLineString(input)) {
         return convertLineStringToGeojsonLineString(
           transformLineStringForwardToLineString(
-            this,
             input,
+            this,
             mergeTransformOptionsAndSetDetault(mergedOptions, {
               destinationIsGeographic: true
             })
@@ -320,8 +320,8 @@ export default class GcpTransformer {
       } else if (isGeojsonLineString(input)) {
         return convertLineStringToGeojsonLineString(
           transformLineStringForwardToLineString(
-            this,
             convertGeojsonLineStringToLineString(input),
+            this,
             mergeTransformOptionsAndSetDetault(mergedOptions, {
               sourceIsGeographic: true,
               destinationIsGeographic: true
@@ -331,8 +331,8 @@ export default class GcpTransformer {
       } else if (isPolygon(input)) {
         return convertPolygonToGeojsonPolygon(
           transformPolygonForwardToPolygon(
-            this,
             input,
+            this,
             mergeTransformOptionsAndSetDetault(mergedOptions, {
               destinationIsGeographic: true
             })
@@ -341,8 +341,8 @@ export default class GcpTransformer {
       } else if (isGeojsonPolygon(input)) {
         return convertPolygonToGeojsonPolygon(
           transformPolygonForwardToPolygon(
-            this,
             convertGeojsonPolygonToPolygon(input),
+            this,
             mergeTransformOptionsAndSetDetault(mergedOptions, {
               sourceIsGeographic: true,
               destinationIsGeographic: true
@@ -447,24 +447,24 @@ export default class GcpTransformer {
         return this.transformBackward(convertGeojsonPointToPoint(input))
       } else if (isLineString(input)) {
         return transformLineStringBackwardToLineString(
-          this,
           input,
+          this,
           mergedOptions
         )
       } else if (isGeojsonLineString(input)) {
         return transformLineStringBackwardToLineString(
-          this,
           convertGeojsonLineStringToLineString(input),
+          this,
           mergeTransformOptionsAndSetDetault(mergedOptions, {
             destinationIsGeographic: true
           })
         )
       } else if (isPolygon(input)) {
-        return transformPolygonBackwardToPolygon(this, input, mergedOptions)
+        return transformPolygonBackwardToPolygon(input, this, mergedOptions)
       } else if (isGeojsonPolygon(input)) {
         return transformPolygonBackwardToPolygon(
-          this,
           convertGeojsonPolygonToPolygon(input),
+          this,
           mergeTransformOptionsAndSetDetault(mergedOptions, {
             destinationIsGeographic: true
           })
@@ -553,8 +553,8 @@ export default class GcpTransformer {
       } else if (isLineString(input)) {
         return convertLineStringToGeojsonLineString(
           transformLineStringBackwardToLineString(
-            this,
             input,
+            this,
             mergeTransformOptionsAndSetDetault(mergedOptions, {
               sourceIsGeographic: true
             })
@@ -563,8 +563,8 @@ export default class GcpTransformer {
       } else if (isGeojsonLineString(input)) {
         return convertLineStringToGeojsonLineString(
           transformLineStringBackwardToLineString(
-            this,
             convertGeojsonLineStringToLineString(input),
+            this,
             mergeTransformOptionsAndSetDetault(mergedOptions, {
               sourceIsGeographic: true,
               destinationIsGeographic: true
@@ -574,8 +574,8 @@ export default class GcpTransformer {
       } else if (isPolygon(input)) {
         return convertPolygonToGeojsonPolygon(
           transformPolygonBackwardToPolygon(
-            this,
             input,
+            this,
             mergeTransformOptionsAndSetDetault(mergedOptions, {
               sourceIsGeographic: true
             })
@@ -584,8 +584,8 @@ export default class GcpTransformer {
       } else if (isGeojsonPolygon(input)) {
         return convertPolygonToGeojsonPolygon(
           transformPolygonBackwardToPolygon(
-            this,
             convertGeojsonPolygonToPolygon(input),
+            this,
             mergeTransformOptionsAndSetDetault(mergedOptions, {
               sourceIsGeographic: true,
               destinationIsGeographic: true

@@ -12,7 +12,7 @@ import {
 import GcpTransformer from '../transformer'
 
 import type {
-  Segment,
+  RefinementSegment,
   TransformOptions,
   RefinementGcp,
   RefinementOptions
@@ -57,7 +57,7 @@ export function mergeTransformOptionsAndSetDetault(
   }
 }
 
-export function refinementOptionsForwardTransform(
+export function refinementOptionsFromForwardTransformOptions(
   transformOptions: TransformOptions
 ): RefinementOptions {
   return {
@@ -77,7 +77,7 @@ export function refinementOptionsForwardTransform(
   }
 }
 
-export function refinementOptionsBackwardTransform(
+export function refinementOptionsFromBackwardTransformOptions(
   transformOptions: TransformOptions
 ): RefinementOptions {
   return {
@@ -98,125 +98,82 @@ export function refinementOptionsBackwardTransform(
 }
 
 export function transformLineStringForwardToLineString(
-  transformer: GcpTransformer,
   lineString: LineString,
+  transformer: GcpTransformer,
   transformOptions: TransformOptions
 ): LineString {
-  lineString = conformLineString(lineString)
-
-  const points: RefinementGcp[] = lineString.map((point) => ({
-    unrefined: point,
-    refined: transformer.transformForward(point)
-  }))
-
-  const segments = pointsToSegments(points, false)
-  const extendedSegments =
-    recursivelyAddMidpointsWithDestinationMidPointFromTransform(
-      segments,
-      (p) => transformer.transformForward(p),
-      refinementOptionsForwardTransform(transformOptions)
-    )
-
-  return segmentsToPoints(extendedSegments, true).map((point) => point.refined)
+  return refineLineString(
+    lineString,
+    (p) => transformer.transformForward(p),
+    refinementOptionsFromForwardTransformOptions(transformOptions)
+  )
 }
 
 export function transformLineStringBackwardToLineString(
-  transformer: GcpTransformer,
   lineString: LineString,
+  transformer: GcpTransformer,
   transformOptions: TransformOptions
 ): LineString {
-  lineString = conformLineString(lineString)
-
-  const points: RefinementGcp[] = lineString.map((point) => ({
-    unrefined: point,
-    refined: transformer.transformBackward(point)
-  }))
-
-  const segments = pointsToSegments(points, false)
-  const extendendSegements =
-    recursivelyAddMidpointsWithSourceMidPointFromTransform(
-      segments,
-      (p) => transformer.transformBackward(p),
-      refinementOptionsBackwardTransform(transformOptions)
-    )
-
-  return segmentsToPoints(extendendSegements, true).map(
-    (point) => point.refined
+  return refineLineString(
+    lineString,
+    (p) => transformer.transformBackward(p),
+    refinementOptionsFromBackwardTransformOptions(transformOptions)
   )
 }
 
 export function transformRingForwardToRing(
-  transformer: GcpTransformer,
   ring: Ring,
+  transformer: GcpTransformer,
   transformOptions: TransformOptions
 ): Ring {
-  ring = conformRing(ring)
-
-  const points: RefinementGcp[] = ring.map((point) => ({
-    unrefined: point,
-    refined: transformer.transformForward(point)
-  }))
-
-  const segments = pointsToSegments(points, true)
-  const extendedSegments =
-    recursivelyAddMidpointsWithDestinationMidPointFromTransform(
-      segments,
-      (p) => transformer.transformForward(p),
-      refinementOptionsForwardTransform(transformOptions)
-    )
-
-  return segmentsToPoints(extendedSegments, false).map((point) => point.refined)
+  return refineRing(
+    ring,
+    (p) => transformer.transformForward(p),
+    refinementOptionsFromForwardTransformOptions(transformOptions)
+  )
 }
 
 export function transformRingBackwardToRing(
-  transformer: GcpTransformer,
   ring: Ring,
+  transformer: GcpTransformer,
   transformOptions: TransformOptions
 ): Ring {
-  ring = conformRing(ring)
-
-  const points: RefinementGcp[] = ring.map((point) => ({
-    unrefined: point,
-    refined: transformer.transformBackward(point)
-  }))
-
-  const segments = pointsToSegments(points, true)
-  const extendendSegements =
-    recursivelyAddMidpointsWithSourceMidPointFromTransform(
-      segments,
-      (p) => transformer.transformBackward(p),
-      refinementOptionsBackwardTransform(transformOptions)
-    )
-
-  return segmentsToPoints(extendendSegements, false).map(
-    (point) => point.refined
+  return refineRing(
+    ring,
+    (p) => transformer.transformBackward(p),
+    refinementOptionsFromBackwardTransformOptions(transformOptions)
   )
 }
 
 export function transformPolygonForwardToPolygon(
-  transformer: GcpTransformer,
   polygon: Polygon,
-  options: TransformOptions
+  transformer: GcpTransformer,
+  transformOptions: TransformOptions
 ): Polygon {
   return polygon.map((ring) => {
-    return transformRingForwardToRing(transformer, ring, options)
+    return transformRingForwardToRing(ring, transformer, transformOptions)
   })
 }
 
 export function transformPolygonBackwardToPolygon(
-  transformer: GcpTransformer,
   polygon: Polygon,
-  options: TransformOptions
+  transformer: GcpTransformer,
+  transformOptions: TransformOptions
 ): Polygon {
   return polygon.map((ring) => {
-    return transformRingBackwardToRing(transformer, ring, options)
+    return transformRingBackwardToRing(ring, transformer, transformOptions)
   })
 }
 
-function pointsToSegments(points: RefinementGcp[], close = false): Segment[] {
+////////
+
+function pointsToSegments(
+  points: RefinementGcp[],
+  close = false
+): RefinementSegment[] {
   const segmentCount = points.length - (close ? 0 : 1)
 
-  const segments: Segment[] = []
+  const segments: RefinementSegment[] = []
   for (let index = 0; index < segmentCount; index++) {
     segments.push({
       from: points[index],
@@ -227,7 +184,10 @@ function pointsToSegments(points: RefinementGcp[], close = false): Segment[] {
   return segments
 }
 
-function segmentsToPoints(segments: Segment[], close = false): RefinementGcp[] {
+function segmentsToPoints(
+  segments: RefinementSegment[],
+  close = false
+): RefinementGcp[] {
   const points = segments.map((segment) => segment.from)
   if (close) {
     points.push(segments[segments.length - 1].to)
@@ -235,79 +195,95 @@ function segmentsToPoints(segments: Segment[], close = false): RefinementGcp[] {
   return points
 }
 
-function recursivelyAddMidpointsWithDestinationMidPointFromTransform(
-  segments: Segment[],
-  transformFunction: (p: Point) => Point,
-  options: RefinementOptions
-) {
-  if (options.maxDepth <= 0) {
+export function refineLineString(
+  lineString: LineString,
+  refinementFunction: (p: Point) => Point,
+  refinementOptions: RefinementOptions
+): LineString {
+  lineString = conformLineString(lineString)
+
+  const points: RefinementGcp[] = lineString.map((point) => ({
+    unrefined: point,
+    refined: refinementFunction(point)
+  }))
+  const segments = pointsToSegments(points, false)
+  const refinedSegments = refineSegments(
+    segments,
+    refinementFunction,
+    refinementOptions
+  )
+
+  return segmentsToPoints(refinedSegments, true).map((point) => point.refined)
+}
+
+export function refineRing(
+  ring: Ring,
+  refinementFunction: (p: Point) => Point,
+  refinementOptions: RefinementOptions
+): Ring {
+  ring = conformRing(ring)
+
+  const points: RefinementGcp[] = ring.map((point) => ({
+    unrefined: point,
+    refined: refinementFunction(point)
+  }))
+  const segments = pointsToSegments(points, true)
+  const refinedSegments = refineSegments(
+    segments,
+    refinementFunction,
+    refinementOptions
+  )
+
+  return segmentsToPoints(refinedSegments, false).map((point) => point.refined)
+}
+
+function refineSegments(
+  segments: RefinementSegment[],
+  refinementFunction: (p: Point) => Point,
+  refinementOptions: RefinementOptions
+): RefinementSegment[] {
+  if (refinementOptions.maxDepth <= 0) {
     return segments
   }
 
   return segments
     .map((segment) =>
-      addMidpointWithDestinationMidPointFromTransform(
-        segment,
-        transformFunction,
-        options,
-        0
-      )
+      splitSegmentRecursively(segment, refinementFunction, refinementOptions, 0)
     )
     .flat(1)
 }
 
-function recursivelyAddMidpointsWithSourceMidPointFromTransform(
-  segments: Segment[],
-  transformFunction: (p: Point) => Point,
-  options: RefinementOptions
-) {
-  if (options.maxDepth <= 0) {
-    return segments
-  }
-
-  return segments
-    .map((segment) =>
-      addMidpointWithSourceMidPointFromTransform(
-        segment,
-        transformFunction,
-        options,
-        0
-      )
-    )
-    .flat(1)
-}
-
-function addMidpointWithDestinationMidPointFromTransform(
-  segment: Segment,
-  transformFunction: (p: Point) => Point,
-  options: RefinementOptions,
+function splitSegmentRecursively(
+  segment: RefinementSegment,
+  refinementFunction: (p: Point) => Point,
+  refinementOptions: RefinementOptions,
   depth: number
-): Segment | Segment[] {
-  if (depth >= options.maxDepth) {
+): RefinementSegment | RefinementSegment[] {
+  if (depth >= refinementOptions.maxDepth) {
     return segment
   }
-  const unrefinedMidPoint = options.unrefinedMidPointFunction(
+  const unrefinedMidPoint = refinementOptions.unrefinedMidPointFunction(
     segment.from.unrefined,
     segment.to.unrefined
   )
-  const refinedMidPoint = options.refinedMidPointFunction(
+  const refinedMidPoint = refinementOptions.refinedMidPointFunction(
     segment.from.refined,
     segment.to.refined
   )
-  const refinedMidPointFromTransform = transformFunction(unrefinedMidPoint)
+  const refinedMidPointFromTransform = refinementFunction(unrefinedMidPoint)
 
-  const segmentRefinedDistance = options.refinedDistanceFunction(
+  const segmentRefinedDistance = refinementOptions.refinedDistanceFunction(
     segment.from.refined,
     segment.to.refined
   )
-  const refinedMidPointsDistance = options.refinedDistanceFunction(
+  const refinedMidPointsDistance = refinementOptions.refinedDistanceFunction(
     refinedMidPoint,
     refinedMidPointFromTransform
   )
 
   if (
     refinedMidPointsDistance / segmentRefinedDistance >
-      options.maxOffsetRatio &&
+      refinementOptions.maxOffsetRatio &&
     segmentRefinedDistance > 0
   ) {
     const newSegmentMidpoint: RefinementGcp = {
@@ -316,76 +292,16 @@ function addMidpointWithDestinationMidPointFromTransform(
     }
 
     return [
-      addMidpointWithDestinationMidPointFromTransform(
+      splitSegmentRecursively(
         { from: segment.from, to: newSegmentMidpoint },
-        transformFunction,
-        options,
+        refinementFunction,
+        refinementOptions,
         depth + 1
       ),
-      addMidpointWithDestinationMidPointFromTransform(
+      splitSegmentRecursively(
         { from: newSegmentMidpoint, to: segment.to },
-        transformFunction,
-        options,
-        depth + 1
-      )
-    ].flat(1)
-  } else {
-    return segment
-  }
-}
-
-function addMidpointWithSourceMidPointFromTransform(
-  segment: Segment,
-  transformFunction: (p: Point) => Point,
-  options: RefinementOptions,
-  depth: number
-): Segment | Segment[] {
-  if (depth >= options.maxDepth) {
-    return segment
-  }
-
-  const unrefinedMidPoint = options.unrefinedMidPointFunction(
-    segment.from.unrefined,
-    segment.to.unrefined
-  )
-  const refinedMidPoint = options.refinedMidPointFunction(
-    segment.from.refined,
-    segment.to.refined
-  )
-  const refinedMidPointFromTransform = transformFunction(
-    unrefinedMidPoint as Point
-  )
-
-  const segmentRefinedDistance = options.refinedDistanceFunction(
-    segment.from.refined,
-    segment.to.refined
-  )
-  const refinedMidPointsDistance = options.refinedDistanceFunction(
-    refinedMidPoint,
-    refinedMidPointFromTransform
-  )
-
-  if (
-    refinedMidPointsDistance / segmentRefinedDistance >
-      options.maxOffsetRatio &&
-    segmentRefinedDistance > 0
-  ) {
-    const newSegmentMidpoint: RefinementGcp = {
-      refined: refinedMidPointFromTransform,
-      unrefined: unrefinedMidPoint
-    }
-
-    return [
-      addMidpointWithSourceMidPointFromTransform(
-        { from: segment.from, to: newSegmentMidpoint },
-        transformFunction,
-        options,
-        depth + 1
-      ),
-      addMidpointWithSourceMidPointFromTransform(
-        { from: newSegmentMidpoint, to: segment.to },
-        transformFunction,
-        options,
+        refinementFunction,
+        refinementOptions,
         depth + 1
       )
     ].flat(1)
