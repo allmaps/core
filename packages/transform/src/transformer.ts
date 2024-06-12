@@ -27,7 +27,8 @@ import {
   joinGeojsonPointArrayToGeojsonMultiPoint,
   joinGeojsonLineStringArrayToGeojsonMultiLineString,
   joinGeojsonPolygonArrayToGeojsonMultiPolygon,
-  flipY
+  flipY,
+  mergeOptions
 } from '@allmaps/stdlib'
 
 import Transformation from './transformation.js'
@@ -42,7 +43,7 @@ import { thinPlateKernel } from './shared/kernel-functions.js'
 import { euclideanNorm } from './shared/norm-functions.js'
 
 import {
-  mergeTransformOptionsAndSetDetault,
+  defaultTransformOptions,
   transformLineStringForwardToLineString,
   transformLineStringBackwardToLineString,
   transformPolygonForwardToPolygon,
@@ -84,7 +85,7 @@ export default class GcpTransformer {
   sourcePoints: Point[]
   destinationPoints: Point[]
   type: TransformationType
-  options?: Partial<TransformOptions>
+  transformOptions: TransformOptions
 
   forwardTransformation?: Transformation
   backwardTransformation?: Transformation
@@ -96,11 +97,12 @@ export default class GcpTransformer {
    */ constructor(
     gcps: TransformGcp[] | Gcp[],
     type: TransformationType = 'polynomial',
-    options?: Partial<TransformOptions>
+    transformOptions?: Partial<TransformOptions>
   ) {
-    if (options) {
-      this.options = options
-    }
+    this.transformOptions = mergeOptions(
+      defaultTransformOptions,
+      transformOptions
+    )
     if (gcps.length === 0) {
       throw new Error('No control points')
     }
@@ -184,10 +186,7 @@ export default class GcpTransformer {
     input: Geometry | GeojsonGeometry,
     options?: Partial<TransformOptions>
   ): Geometry {
-    const mergedOptions = mergeTransformOptionsAndSetDetault(
-      options,
-      this.options
-    )
+    const mergedOptions = mergeOptions(this.transformOptions, options)
     if (!mergedOptions.inputIsMultiGeometry) {
       if (isPoint(input)) {
         if (!this.forwardTransformation) {
@@ -212,7 +211,7 @@ export default class GcpTransformer {
         return transformLineStringForwardToLineString(
           convertGeojsonLineStringToLineString(input),
           this,
-          mergeTransformOptionsAndSetDetault(mergedOptions, {
+          mergeOptions(mergedOptions, {
             sourceIsGeographic: true
           })
         )
@@ -222,7 +221,7 @@ export default class GcpTransformer {
         return transformPolygonForwardToPolygon(
           convertGeojsonPolygonToPolygon(input),
           this,
-          mergeTransformOptionsAndSetDetault(mergedOptions, {
+          mergeOptions(mergedOptions, {
             sourceIsGeographic: true
           })
         )
@@ -296,10 +295,7 @@ export default class GcpTransformer {
     input: Geometry | GeojsonGeometry,
     options?: Partial<TransformOptions>
   ): GeojsonGeometry {
-    const mergedOptions = mergeTransformOptionsAndSetDetault(
-      this.options,
-      options
-    )
+    const mergedOptions = mergeOptions(this.transformOptions, options)
     if (!mergedOptions.inputIsMultiGeometry) {
       if (isPoint(input)) {
         return convertPointToGeojsonPoint(this.transformForward(input))
@@ -312,7 +308,7 @@ export default class GcpTransformer {
           transformLineStringForwardToLineString(
             input,
             this,
-            mergeTransformOptionsAndSetDetault(mergedOptions, {
+            mergeOptions(mergedOptions, {
               destinationIsGeographic: true
             })
           )
@@ -322,7 +318,7 @@ export default class GcpTransformer {
           transformLineStringForwardToLineString(
             convertGeojsonLineStringToLineString(input),
             this,
-            mergeTransformOptionsAndSetDetault(mergedOptions, {
+            mergeOptions(mergedOptions, {
               sourceIsGeographic: true,
               destinationIsGeographic: true
             })
@@ -333,7 +329,7 @@ export default class GcpTransformer {
           transformPolygonForwardToPolygon(
             input,
             this,
-            mergeTransformOptionsAndSetDetault(mergedOptions, {
+            mergeOptions(mergedOptions, {
               destinationIsGeographic: true
             })
           )
@@ -343,7 +339,7 @@ export default class GcpTransformer {
           transformPolygonForwardToPolygon(
             convertGeojsonPolygonToPolygon(input),
             this,
-            mergeTransformOptionsAndSetDetault(mergedOptions, {
+            mergeOptions(mergedOptions, {
               sourceIsGeographic: true,
               destinationIsGeographic: true
             })
@@ -431,10 +427,7 @@ export default class GcpTransformer {
     input: Geometry | GeojsonGeometry,
     options?: Partial<TransformOptions>
   ): Geometry {
-    const mergedOptions = mergeTransformOptionsAndSetDetault(
-      options,
-      this.options
-    )
+    const mergedOptions = mergeOptions(this.transformOptions, options)
     if (!mergedOptions.inputIsMultiGeometry) {
       if (isPoint(input)) {
         if (!this.backwardTransformation) {
@@ -455,7 +448,7 @@ export default class GcpTransformer {
         return transformLineStringBackwardToLineString(
           convertGeojsonLineStringToLineString(input),
           this,
-          mergeTransformOptionsAndSetDetault(mergedOptions, {
+          mergeOptions(mergedOptions, {
             destinationIsGeographic: true
           })
         )
@@ -465,7 +458,7 @@ export default class GcpTransformer {
         return transformPolygonBackwardToPolygon(
           convertGeojsonPolygonToPolygon(input),
           this,
-          mergeTransformOptionsAndSetDetault(mergedOptions, {
+          mergeOptions(mergedOptions, {
             destinationIsGeographic: true
           })
         )
@@ -539,10 +532,7 @@ export default class GcpTransformer {
     input: Geometry | GeojsonGeometry,
     options?: Partial<TransformOptions>
   ): GeojsonGeometry {
-    const mergedOptions = mergeTransformOptionsAndSetDetault(
-      this.options,
-      options
-    )
+    const mergedOptions = mergeOptions(this.transformOptions, options)
     if (!mergedOptions.inputIsMultiGeometry) {
       if (isPoint(input)) {
         return convertPointToGeojsonPoint(this.transformBackward(input))
@@ -555,7 +545,7 @@ export default class GcpTransformer {
           transformLineStringBackwardToLineString(
             input,
             this,
-            mergeTransformOptionsAndSetDetault(mergedOptions, {
+            mergeOptions(mergedOptions, {
               sourceIsGeographic: true
             })
           )
@@ -565,7 +555,7 @@ export default class GcpTransformer {
           transformLineStringBackwardToLineString(
             convertGeojsonLineStringToLineString(input),
             this,
-            mergeTransformOptionsAndSetDetault(mergedOptions, {
+            mergeOptions(mergedOptions, {
               sourceIsGeographic: true,
               destinationIsGeographic: true
             })
@@ -576,7 +566,7 @@ export default class GcpTransformer {
           transformPolygonBackwardToPolygon(
             input,
             this,
-            mergeTransformOptionsAndSetDetault(mergedOptions, {
+            mergeOptions(mergedOptions, {
               sourceIsGeographic: true
             })
           )
@@ -586,7 +576,7 @@ export default class GcpTransformer {
           transformPolygonBackwardToPolygon(
             convertGeojsonPolygonToPolygon(input),
             this,
-            mergeTransformOptionsAndSetDetault(mergedOptions, {
+            mergeOptions(mergedOptions, {
               sourceIsGeographic: true,
               destinationIsGeographic: true
             })
@@ -682,10 +672,7 @@ export default class GcpTransformer {
     input: Geometry | GeojsonGeometry,
     options?: Partial<TransformOptions>
   ): Geometry {
-    const mergedOptions = mergeTransformOptionsAndSetDetault(
-      this.options,
-      options
-    )
+    const mergedOptions = mergeOptions(this.transformOptions, options)
     if (!mergedOptions.inputIsMultiGeometry) {
       if (isPoint(input)) {
         return this.transformForward(input as Point, options)
@@ -763,10 +750,7 @@ export default class GcpTransformer {
     input: Geometry | GeojsonGeometry,
     options?: Partial<TransformOptions>
   ): GeojsonGeometry {
-    const mergedOptions = mergeTransformOptionsAndSetDetault(
-      this.options,
-      options
-    )
+    const mergedOptions = mergeOptions(this.transformOptions, options)
     if (!mergedOptions.inputIsMultiGeometry) {
       if (isPoint(input)) {
         return this.transformForwardAsGeojson(input as Point, options)
@@ -853,10 +837,7 @@ export default class GcpTransformer {
     input: Geometry | GeojsonGeometry,
     options?: Partial<TransformOptions>
   ): Geometry {
-    const mergedOptions = mergeTransformOptionsAndSetDetault(
-      this.options,
-      options
-    )
+    const mergedOptions = mergeOptions(this.transformOptions, options)
     if (!mergedOptions.inputIsMultiGeometry) {
       if (isPoint(input)) {
         return this.transformBackward(input as Point, options)
@@ -934,10 +915,7 @@ export default class GcpTransformer {
     input: Geometry | GeojsonGeometry,
     options?: Partial<TransformOptions>
   ): GeojsonGeometry {
-    const mergedOptions = mergeTransformOptionsAndSetDetault(
-      this.options,
-      options
-    )
+    const mergedOptions = mergeOptions(this.transformOptions, options)
     if (!mergedOptions.inputIsMultiGeometry) {
       if (isPoint(input)) {
         return this.transformBackwardAsGeojson(input as Point, options)
@@ -1088,7 +1066,7 @@ export default class GcpTransformer {
   }
 
   private assureEqualHandedness(point: Point): Point {
-    return this.options?.differentHandedness ? flipY(point) : point
+    return this.transformOptions?.differentHandedness ? flipY(point) : point
   }
 
   private computeTransformation(

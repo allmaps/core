@@ -432,10 +432,10 @@ export default class WarpedMapLayer extends Layer {
 
   /**
    * Removes a color from all maps
-   * @param {Object} options - remove color options
-   * @param {string} [options.hexColor] - hex color to remove
-   * @param {number} [options.threshold] - threshold between 0 and 1
-   * @param {number} [options.hardness] - hardness between 0 and 1
+   * @param {Object} transformOptions - remove color options
+   * @param {string} [transformOptions.hexColor] - hex color to remove
+   * @param {number} [transformOptions.threshold] - threshold between 0 and 1
+   * @param {number} [transformOptions.hardness] - hardness between 0 and 1
    */
   setRemoveColor(
     options: Partial<{ hexColor: string; threshold: number; hardness: number }>
@@ -463,10 +463,10 @@ export default class WarpedMapLayer extends Layer {
   /**
    * Removes a color from a single map
    * @param {string} mapId - ID of the map
-   * @param {Object} options - remove color options
-   * @param {string} [options.hexColor] - hex color to remove
-   * @param {number} [options.threshold] - threshold between 0 and 1
-   * @param {number} [options.hardness] - hardness between 0 and 1
+   * @param {Object} transformOptions - remove color options
+   * @param {string} [transformOptions.hexColor] - hex color to remove
+   * @param {number} [transformOptions.threshold] - threshold between 0 and 1
+   * @param {number} [transformOptions.hardness] - hardness between 0 and 1
    */
   setMapRemoveColor(
     mapId: string,
