@@ -1,4 +1,4 @@
-import Helmert from './helmert.js'
+import Helmert from '../transformation-types/helmert.js'
 
 import Transformation from '../transformation.js'
 

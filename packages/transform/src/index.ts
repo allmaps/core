@@ -2,16 +2,19 @@ import GcpTransformer from './transformer.js'
 
 import Transformation from './transformation.js'
 
-import Helmert from './shared/helmert.js'
-import Polynomial from './shared/polynomial.js'
-import Projective from './shared/projective.js'
-import RBF from './shared/radial-basis-function.js'
-import Straight from './shared/straight.js'
+import Helmert from './transformation-types/helmert.js'
+import Polynomial from './transformation-types/polynomial.js'
+import Projective from './transformation-types/projective.js'
+import RBF from './transformation-types/radial-basis-function.js'
+import Straight from './transformation-types/straight.js'
 
 import {
   supportedDistortionMeasures,
   computeDistortionFromPartialDerivatives
 } from './distortion.js'
+
+import { defaultTransformOptions } from './shared/transform-helper-functions.js'
+import { defaultRefinementOptions } from './shared/refinement-helper-functions.js'
 
 /** @module allmaps/transform */
 
@@ -25,7 +28,9 @@ export {
   RBF,
   Straight,
   supportedDistortionMeasures,
-  computeDistortionFromPartialDerivatives
+  computeDistortionFromPartialDerivatives,
+  defaultTransformOptions,
+  defaultRefinementOptions
 }
 
 export * from './shared/types.js'

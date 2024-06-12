@@ -33,11 +33,11 @@ import {
 
 import Transformation from './transformation.js'
 
-import Straight from './shared/straight.js'
-import Helmert from './shared/helmert.js'
-import Polynomial from './shared/polynomial.js'
-import Projective from './shared/projective.js'
-import RBF from './shared/radial-basis-function.js'
+import Straight from './transformation-types/straight.js'
+import Helmert from './transformation-types/helmert.js'
+import Polynomial from './transformation-types/polynomial.js'
+import Projective from './transformation-types/projective.js'
+import RBF from './transformation-types/radial-basis-function.js'
 
 import { thinPlateKernel } from './shared/kernel-functions.js'
 import { euclideanNorm } from './shared/norm-functions.js'
