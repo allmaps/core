@@ -16,7 +16,8 @@ export const defaultTransformOptions: TransformOptions = {
   sourceIsGeographic: false,
   inputIsMultiGeometry: false,
   differentHandedness: false,
-  evaluationType: 'function'
+  evaluationType: 'function',
+  returnDomain: 'normal'
 }
 
 export function refinementOptionsFromForwardTransformOptions(
@@ -37,6 +38,9 @@ export function refinementOptionsFromForwardTransformOptions(
       point1: Point
     ) => getWorldMidpoint(point0, point1).geometry.coordinates as Point
     refinementOptions.destinationDistanceFunction = getWorldDistance
+  }
+  if (transformOptions.returnDomain == 'inverse') {
+    refinementOptions.returnDomain = 'source'
   }
   return refinementOptions
 }
@@ -59,6 +63,9 @@ export function refinementOptionsFromBackwardTransformOptions(
       point1: Point
     ) => getWorldMidpoint(point0, point1).geometry.coordinates as Point
     refinementOptions.destinationDistanceFunction = getWorldDistance
+  }
+  if (transformOptions.returnDomain == 'inverse') {
+    refinementOptions.returnDomain = 'source'
   }
   return refinementOptions
 }

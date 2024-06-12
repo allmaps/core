@@ -25,7 +25,8 @@ export const defaultRefinementOptions: RefinementOptions = {
   maxDepth: 0,
   sourceMidPointFunction: midPoint,
   destinationMidPointFunction: midPoint,
-  destinationDistanceFunction: distance
+  destinationDistanceFunction: distance,
+  returnDomain: 'destination'
 }
 
 function gcpsToSegments(gcps: TransformGcp[], close = false): Segment[] {
@@ -72,7 +73,11 @@ export function refineLineString(
     refinementOptions
   )
 
-  return segmentsToGcps(refinedSegments, true).map((point) => point.destination)
+  return segmentsToGcps(refinedSegments, true).map((point) =>
+    refinementOptions.returnDomain == 'destination'
+      ? point.destination
+      : point.source
+  )
 }
 
 export function refineRing(
@@ -97,8 +102,10 @@ export function refineRing(
     refinementOptions
   )
 
-  return segmentsToGcps(refinedSegments, false).map(
-    (point) => point.destination
+  return segmentsToGcps(refinedSegments, false).map((point) =>
+    refinementOptions.returnDomain == 'destination'
+      ? point.destination
+      : point.source
   )
 }
 

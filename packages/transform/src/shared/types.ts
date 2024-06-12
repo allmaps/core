@@ -17,6 +17,7 @@ export type RefinementOptions = {
   sourceMidPointFunction: (p0: Point, p1: Point) => Point
   destinationMidPointFunction: (p0: Point, p1: Point) => Point
   destinationDistanceFunction: (p0: Point, p1: Point) => number
+  returnDomain: 'source' | 'destination'
 }
 
 /** Transformation type. */
@@ -41,6 +42,8 @@ export type TransformOptions = {
   inputIsMultiGeometry: boolean
   differentHandedness: boolean
   evaluationType: EvaluationType
+  // Whether to return the normal domain (destination for forward and source for backward) or the inverse
+  returnDomain: 'normal' | 'inverse'
 }
 
 export type KernelFunction = (

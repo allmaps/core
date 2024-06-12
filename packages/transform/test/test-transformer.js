@@ -482,3 +482,32 @@ describe('Transform SVG string Backward To Polygon', async () => {
     ).to.deep.equal(output)
   })
 })
+
+describe('Transform LineString Forward To LineString, with inverse returnDomain', async () => {
+  const transformOptions = {
+    maxOffsetRatio: 0.01,
+    maxDepth: 1,
+    returnDomain: 'inverse'
+  }
+  const transformer = new GcpTransformer(transformGcps6, 'thinPlateSpline')
+  const input = [
+    [1000, 1000],
+    [1000, 2000],
+    [2000, 2000],
+    [2000, 1000]
+  ]
+  const output = [
+    [1000, 1000],
+    [1000, 2000],
+    [2000, 2000],
+    [2000, 1500],
+    [2000, 1000]
+  ]
+
+  it(`should give the same result as with normal returnDomain, but return the corresponding points in the source domain`, () => {
+    expectToBeCloseToArrayArray(
+      transformer.transformForward(input, transformOptions),
+      output
+    )
+  })
+})
