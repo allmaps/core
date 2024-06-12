@@ -28,17 +28,15 @@ export function refinementOptionsFromForwardTransformOptions(
   }
 
   if (transformOptions.sourceIsGeographic) {
-    refinementOptions.unrefinedMidPointFunction = (
-      point0: Point,
-      point1: Point
-    ) => getWorldMidpoint(point0, point1).geometry.coordinates as Point
+    refinementOptions.sourceMidPointFunction = (point0: Point, point1: Point) =>
+      getWorldMidpoint(point0, point1).geometry.coordinates as Point
   }
   if (transformOptions.destinationIsGeographic) {
-    refinementOptions.refinedMidPointFunction = (
+    refinementOptions.destinationMidPointFunction = (
       point0: Point,
       point1: Point
     ) => getWorldMidpoint(point0, point1).geometry.coordinates as Point
-    refinementOptions.refinedDistanceFunction = getWorldDistance
+    refinementOptions.destinationDistanceFunction = getWorldDistance
   }
   return refinementOptions
 }
@@ -52,17 +50,15 @@ export function refinementOptionsFromBackwardTransformOptions(
   }
 
   if (transformOptions.destinationIsGeographic) {
-    refinementOptions.unrefinedMidPointFunction = (
-      point0: Point,
-      point1: Point
-    ) => getWorldMidpoint(point0, point1).geometry.coordinates as Point
+    refinementOptions.sourceMidPointFunction = (point0: Point, point1: Point) =>
+      getWorldMidpoint(point0, point1).geometry.coordinates as Point
   }
   if (transformOptions.sourceIsGeographic) {
-    refinementOptions.refinedMidPointFunction = (
+    refinementOptions.destinationMidPointFunction = (
       point0: Point,
       point1: Point
     ) => getWorldMidpoint(point0, point1).geometry.coordinates as Point
-    refinementOptions.refinedDistanceFunction = getWorldDistance
+    refinementOptions.destinationDistanceFunction = getWorldDistance
   }
   return refinementOptions
 }
