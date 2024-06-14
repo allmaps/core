@@ -37,6 +37,8 @@ export function refinementOptionsFromForwardTransformOptions(
 ): Partial<RefinementOptions> {
   const refinementOptions: Partial<RefinementOptions> = {
     maxOffsetRatio: transformOptions.maxOffsetRatio,
+    minOffsetDistance: transformOptions.minOffsetDistance,
+    minLineDistance: transformOptions.minLineDistance,
     maxDepth: transformOptions.maxDepth
   }
 
@@ -62,6 +64,8 @@ export function refinementOptionsFromBackwardTransformOptions(
 ): Partial<RefinementOptions> {
   const refinementOptions: Partial<RefinementOptions> = {
     maxOffsetRatio: transformOptions.maxOffsetRatio,
+    minOffsetDistance: transformOptions.minOffsetDistance,
+    minLineDistance: transformOptions.minLineDistance,
     maxDepth: transformOptions.maxDepth
   }
 
@@ -150,7 +154,7 @@ export function transformPolygonBackwardToPolygon(
   })
 }
 
-// TODO: consoder to add these as methods on transformer class
+// TODO: consider to add these as methods on transformer class
 export function transformRectangleForwardToRectangles(
   rectangle: Rectangle,
   transformer: GcpTransformer,
@@ -171,6 +175,6 @@ export function transformRectangleBackwardToRectangles(
   return refineRectangleToRectangles(
     rectangle,
     (p) => transformer.transformForward(p),
-    refinementOptionsFromForwardTransformOptions(transformOptions)
+    refinementOptionsFromBackwardTransformOptions(transformOptions)
   )
 }

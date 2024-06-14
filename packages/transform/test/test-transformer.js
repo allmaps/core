@@ -3,7 +3,8 @@ import { expect } from 'chai'
 
 import {
   geometriesToFeatureCollection,
-  convertGeometryToGeojsonGeometry
+  convertGeometryToGeojsonGeometry,
+  mergeOptions
 } from '@allmaps/stdlib'
 
 import {
@@ -13,11 +14,14 @@ import {
 
 import { GcpTransformer } from '../dist/index.js'
 
-import { transformRectangleForwardToRectangles } from '../dist/shared/transform-helper-functions.js'
+import {
+  transformRectangleForwardToRectangles,
+  defaultTransformOptions
+} from '../dist/shared/transform-helper-functions.js'
 
 import { transformGcps6, gcps6, transformGcps7 } from './input/gcps-test.js'
 
-describe('Transform LineString Forward To LineString, with maxDepth = 1', async () => {
+describe('Transform LineString Forward To LineString, with maxDepth = 1 and maxOffsetRatio', async () => {
   const transformOptions = {
     maxOffsetRatio: 0.01,
     maxDepth: 1
@@ -31,6 +35,94 @@ describe('Transform LineString Forward To LineString, with maxDepth = 1', async 
   ]
   const output = [
     [4.388957777030093, 51.959084191571606],
+    [4.392938913951547, 51.94062947962427],
+    [4.425874493300959, 51.94172557475595],
+    [4.4230497784967655, 51.950815146974556],
+    [4.420666790347598, 51.959985351835975]
+  ]
+
+  it(`should transform the lineString (without closing) and add some midpoints`, () => {
+    expectToBeCloseToArrayArray(
+      transformer.transformForward(input, transformOptions),
+      output
+    )
+  })
+})
+
+describe('Transform LineString Forward To LineString, with maxDepth = 1 and maxOffsetRatio = 0', async () => {
+  const transformOptions = {
+    maxOffsetRatio: 0,
+    maxDepth: 1
+  }
+  const transformer = new GcpTransformer(transformGcps6, 'thinPlateSpline')
+  const input = [
+    [1000, 1000],
+    [1000, 2000],
+    [2000, 2000],
+    [2000, 1000]
+  ]
+  const output = [
+    [4.388957777030093, 51.959084191571606],
+    [4.390889520773774, 51.94984430356657],
+    [4.392938913951547, 51.94062947962427],
+    [4.409493277493718, 51.94119110133424],
+    [4.425874493300959, 51.94172557475595],
+    [4.4230497784967655, 51.950815146974556],
+    [4.420666790347598, 51.959985351835975]
+  ]
+
+  it(`should transform the lineString (without closing) and add all midpoints`, () => {
+    expectToBeCloseToArrayArray(
+      transformer.transformForward(input, transformOptions),
+      output
+    )
+  })
+})
+
+describe('Transform LineString Forward To LineString, with maxDepth = 1 and minOffsetDistance', async () => {
+  const transformOptions = {
+    minOffsetDistance: 0.0001,
+    maxDepth: 1
+  }
+  const transformer = new GcpTransformer(transformGcps6, 'thinPlateSpline')
+  const input = [
+    [1000, 1000],
+    [1000, 2000],
+    [2000, 2000],
+    [2000, 1000]
+  ]
+  const output = [
+    [4.388957777030093, 51.959084191571606],
+    [4.390889520773774, 51.94984430356657],
+    [4.392938913951547, 51.94062947962427],
+    [4.409493277493718, 51.94119110133424],
+    [4.425874493300959, 51.94172557475595],
+    [4.420666790347598, 51.959985351835975]
+  ]
+
+  it(`should transform the lineString (without closing) and add some midpoints`, () => {
+    expectToBeCloseToArrayArray(
+      transformer.transformForward(input, transformOptions),
+      output
+    )
+  })
+})
+
+describe('Transform LineString Forward To LineString, with maxDepth = 1 and minLineDistance', async () => {
+  const transformOptions = {
+    minLineDistance: 0.02,
+    maxDepth: 1
+  }
+  const transformer = new GcpTransformer(transformGcps6, 'thinPlateSpline')
+  const input = [
+    [1000, 1000],
+    [1000, 2000],
+    [2000, 2000],
+    [2000, 1000]
+  ]
+  const output = [
+    [4.388957777030093, 51.959084191571606],
+    [4.390889520773774, 51.94984430356657],
     [4.392938913951547, 51.94062947962427],
     [4.425874493300959, 51.94172557475595],
     [4.4230497784967655, 51.950815146974556],
@@ -516,10 +608,12 @@ describe('Transform LineString Forward To LineString, with inverse returnDomain'
 })
 
 describe('Transform Rectangle Forward To Rectangles', async () => {
-  const transformOptions = {
+  let transformOptions = {
     maxOffsetRatio: 0.001,
     maxDepth: 1
   }
+  transformOptions = mergeOptions(defaultTransformOptions, transformOptions)
+  // Make sure to merge options to apply default. The other tests are on methods of the Transformer class, where this is done automatically
   const transformer = new GcpTransformer(transformGcps6, 'thinPlateSpline')
   const input = [
     [1000, 1000],
@@ -567,10 +661,12 @@ describe('Transform Rectangle Forward To Rectangles', async () => {
 })
 
 describe('Transform Rectangle Forward To Rectangles, with polynomial transform', async () => {
-  const transformOptions = {
+  let transformOptions = {
     maxOffsetRatio: 0.001,
     maxDepth: 1
   }
+  transformOptions = mergeOptions(defaultTransformOptions, transformOptions)
+  // Make sure to merge options to apply default. The other tests are on methods of the Transformer class, where this is done automatically
   const transformer = new GcpTransformer(transformGcps6, 'polynomial')
   const input = [
     [1000, 1000],
