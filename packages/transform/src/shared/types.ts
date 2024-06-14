@@ -6,10 +6,13 @@ import type { Point } from '@allmaps/types'
  */
 export type TransformGcp = { source: Point; destination: Point }
 
-export type Segment = {
-  from: TransformGcp
-  to: TransformGcp
-}
+export type TransformGcpLine = [TransformGcp, TransformGcp]
+export type TransformGcpRectangle = [
+  TransformGcp,
+  TransformGcp,
+  TransformGcp,
+  TransformGcp
+]
 
 export type RefinementOptions = {
   maxOffsetRatio: number

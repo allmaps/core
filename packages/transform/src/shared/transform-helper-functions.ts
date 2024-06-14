@@ -3,11 +3,21 @@ import getWorldMidpoint from '@turf/midpoint'
 import getWorldDistance from '@turf/distance'
 
 import GcpTransformer from '../transformer'
-import { refineLineString, refineRing } from './refinement-helper-functions.js'
+import {
+  refineLineString,
+  refineRectangleToRectangles,
+  refineRing
+} from './refinement-helper-functions.js'
 
 import type { TransformOptions, RefinementOptions } from './types.js'
 
-import type { Point, LineString, Ring, Polygon } from '@allmaps/types'
+import type {
+  Point,
+  LineString,
+  Ring,
+  Polygon,
+  Rectangle
+} from '@allmaps/types'
 
 export const defaultTransformOptions: TransformOptions = {
   maxOffsetRatio: 0,
@@ -136,4 +146,29 @@ export function transformPolygonBackwardToPolygon(
   return polygon.map((ring) => {
     return transformRingBackwardToRing(ring, transformer, transformOptions)
   })
+}
+
+// TODO: consoder to add these as methods on transformer class
+export function transformRectangleForwardToRectangles(
+  rectangle: Rectangle,
+  transformer: GcpTransformer,
+  transformOptions: TransformOptions
+): Rectangle[] {
+  return refineRectangleToRectangles(
+    rectangle,
+    (p) => transformer.transformForward(p),
+    refinementOptionsFromForwardTransformOptions(transformOptions)
+  )
+}
+
+export function transformRectangleBackwardToRectangles(
+  rectangle: Rectangle,
+  transformer: GcpTransformer,
+  transformOptions: TransformOptions
+): Rectangle[] {
+  return refineRectangleToRectangles(
+    rectangle,
+    (p) => transformer.transformForward(p),
+    refinementOptionsFromForwardTransformOptions(transformOptions)
+  )
 }
