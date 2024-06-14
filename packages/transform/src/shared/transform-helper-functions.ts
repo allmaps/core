@@ -21,6 +21,8 @@ import type {
 
 export const defaultTransformOptions: TransformOptions = {
   maxOffsetRatio: 0,
+  minOffsetDistance: Infinity,
+  minLineDistance: Infinity,
   maxDepth: 0,
   destinationIsGeographic: false,
   sourceIsGeographic: false,

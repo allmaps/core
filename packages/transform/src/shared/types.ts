@@ -16,6 +16,8 @@ export type TransformGcpRectangle = [
 
 export type RefinementOptions = {
   maxOffsetRatio: number
+  minOffsetDistance: number
+  minLineDistance: number
   maxDepth: number
   sourceMidPointFunction: (p0: Point, p1: Point) => Point
   destinationMidPointFunction: (p0: Point, p1: Point) => Point
@@ -36,6 +38,8 @@ export type TransformationType =
 
 export type TransformOptions = {
   maxOffsetRatio: number
+  minOffsetDistance: number
+  minLineDistance: number
   maxDepth: number
   // Assume source points are in lon/lat coordinates and use geographic distances and midpoints there
   sourceIsGeographic: boolean

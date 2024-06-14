@@ -28,6 +28,8 @@ import type {
 export const defaultRefinementOptions: RefinementOptions = {
   maxOffsetRatio: 0,
   maxDepth: 0,
+  minOffsetDistance: Infinity,
+  minLineDistance: Infinity,
   sourceMidPointFunction: midPoint,
   destinationMidPointFunction: midPoint,
   destinationDistanceFunction: distance,
@@ -157,10 +159,14 @@ function splitTransformGcpLineRecursively(
   const destinationMidPointFromRefinementFunction =
     refinementFunction(sourceMidPoint)
 
-  const transformGcpLineRefinedDistance =
+  const destinationLineDistance = refinementOptions.destinationDistanceFunction(
+    transformGcpLine[0].destination,
+    transformGcpLine[1].destination
+  )
+  const destinationRefinedLineDistance =
     refinementOptions.destinationDistanceFunction(
-      transformGcpLine[0].destination,
-      transformGcpLine[1].destination
+      refinementFunction(transformGcpLine[0].source),
+      refinementFunction(transformGcpLine[1].source)
     )
   const destinationMidPointsDistance =
     refinementOptions.destinationDistanceFunction(
@@ -169,9 +175,11 @@ function splitTransformGcpLineRecursively(
     )
 
   if (
-    destinationMidPointsDistance / transformGcpLineRefinedDistance >
+    destinationMidPointsDistance / destinationLineDistance >
       refinementOptions.maxOffsetRatio &&
-    transformGcpLineRefinedDistance > 0
+    destinationMidPointsDistance < refinementOptions.minOffsetDistance &&
+    destinationRefinedLineDistance < refinementOptions.minLineDistance
+    // destinationLineDistance > 0 // Todo: can this line be removed?
   ) {
     const newMidTransformGcp: TransformGcp = {
       source: sourceMidPoint,
