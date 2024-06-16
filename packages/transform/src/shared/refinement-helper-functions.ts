@@ -51,19 +51,14 @@ export function refineLineString(
     source: point,
     destination: refinementFunction(point)
   }))
-  const transformGcpLines = gcpsToTransformGcpLines(gcps, false)
-  const refinedTransformGcpLines = transformGcpLines
-    .map((transformGcpLine) =>
-      splitTransformGcpLineRecursively(
-        transformGcpLine,
-        refinementFunction,
-        refinementOptions,
-        0
-      )
+  const gcpLines = gcpsToGcpLines(gcps, false)
+  const refinedGcpLines = gcpLines
+    .map((gcpLine) =>
+      splitGcpLineRecursively(gcpLine, refinementFunction, refinementOptions, 0)
     )
     .flat(1)
 
-  return transformGcpLinesToGcps(refinedTransformGcpLines, true).map((point) =>
+  return gcpLinesToGcps(refinedGcpLines, true).map((point) =>
     refinementOptions.returnDomain == 'destination'
       ? point.destination
       : point.source
@@ -85,19 +80,14 @@ export function refineRing(
     source: point,
     destination: refinementFunction(point)
   }))
-  const transformGcpLines = gcpsToTransformGcpLines(gcps, true)
-  const refinedTransformGcpLines = transformGcpLines
+  const gcpLines = gcpsToGcpLines(gcps, true)
+  const refinedGcpLines = gcpLines
     .map((line) =>
-      splitTransformGcpLineRecursively(
-        line,
-        refinementFunction,
-        refinementOptions,
-        0
-      )
+      splitGcpLineRecursively(line, refinementFunction, refinementOptions, 0)
     )
     .flat(1)
 
-  return transformGcpLinesToGcps(refinedTransformGcpLines, false).map((point) =>
+  return gcpLinesToGcps(refinedGcpLines, false).map((point) =>
     refinementOptions.returnDomain == 'destination'
       ? point.destination
       : point.source
@@ -115,20 +105,18 @@ export function refineRectangleToRectangles(
     partialRefinementOptions
   )
 
-  const transformGcpRectangle: TransformGcpRectangle = rectangle.map(
-    (point) => ({
-      source: point,
-      destination: refinementFunction(point)
-    })
-  ) as TransformGcpRectangle
-  const transformGcpRectangles = splitTransformGcpRectangleRecursively(
-    transformGcpRectangle,
+  const gcpRectangle: TransformGcpRectangle = rectangle.map((point) => ({
+    source: point,
+    destination: refinementFunction(point)
+  })) as TransformGcpRectangle
+  const gcpRectangles = splitGcpRectangleRecursively(
+    gcpRectangle,
     refinementFunction,
     refinementOptions,
     0
   )
 
-  return transformGcpRectangles.map(
+  return gcpRectangles.map(
     (transformedGcpRectangle) =>
       transformedGcpRectangle.map((point) =>
         refinementOptions.returnDomain == 'destination'
@@ -138,35 +126,35 @@ export function refineRectangleToRectangles(
   )
 }
 
-function splitTransformGcpLineRecursively(
-  transformGcpLine: TransformGcpLine,
+function splitGcpLineRecursively(
+  gcpLine: TransformGcpLine,
   refinementFunction: (p: Point) => Point,
   refinementOptions: RefinementOptions,
   depth: number
 ): TransformGcpLine[] {
   if (depth >= refinementOptions.maxDepth || refinementOptions.maxDepth <= 0) {
-    return [transformGcpLine]
+    return [gcpLine]
   }
 
   const sourceMidPoint = refinementOptions.sourceMidPointFunction(
-    transformGcpLine[0].source,
-    transformGcpLine[1].source
+    gcpLine[0].source,
+    gcpLine[1].source
   )
   const destinationMidPoint = refinementOptions.destinationMidPointFunction(
-    transformGcpLine[0].destination,
-    transformGcpLine[1].destination
+    gcpLine[0].destination,
+    gcpLine[1].destination
   )
   const destinationMidPointFromRefinementFunction =
     refinementFunction(sourceMidPoint)
 
   const destinationLineDistance = refinementOptions.destinationDistanceFunction(
-    transformGcpLine[0].destination,
-    transformGcpLine[1].destination
+    gcpLine[0].destination,
+    gcpLine[1].destination
   )
   const destinationRefinedLineDistance =
     refinementOptions.destinationDistanceFunction(
-      refinementFunction(transformGcpLine[0].source),
-      refinementFunction(transformGcpLine[1].source)
+      refinementFunction(gcpLine[0].source),
+      refinementFunction(gcpLine[1].source)
     )
   const destinationMidPointsDistance =
     refinementOptions.destinationDistanceFunction(
@@ -181,139 +169,116 @@ function splitTransformGcpLineRecursively(
     destinationRefinedLineDistance < refinementOptions.minLineDistance
     // destinationLineDistance > 0 // Todo: can this line be removed?
   ) {
-    const newMidTransformGcp: TransformGcp = {
+    const newMidGcp: TransformGcp = {
       source: sourceMidPoint,
       destination: destinationMidPointFromRefinementFunction
     }
 
     return [
-      splitTransformGcpLineRecursively(
-        [transformGcpLine[0], newMidTransformGcp],
+      splitGcpLineRecursively(
+        [gcpLine[0], newMidGcp],
         refinementFunction,
         refinementOptions,
         depth + 1
       ),
-      splitTransformGcpLineRecursively(
-        [newMidTransformGcp, transformGcpLine[1]],
+      splitGcpLineRecursively(
+        [newMidGcp, gcpLine[1]],
         refinementFunction,
         refinementOptions,
         depth + 1
       )
     ].flat(1)
   } else {
-    return [transformGcpLine]
+    return [gcpLine]
   }
 }
 
-function splitTransformGcpRectangleRecursively(
-  transformGcpRectangle: TransformGcpRectangle,
+function splitGcpRectangleRecursively(
+  gcpRectangle: TransformGcpRectangle,
   refinementFunction: (p: Point) => Point,
   refinementOptions: RefinementOptions,
   depth: number
 ): TransformGcpRectangle[] {
   if (depth >= refinementOptions.maxDepth || refinementOptions.maxDepth <= 0) {
-    return [transformGcpRectangle]
+    return [gcpRectangle]
   }
 
-  const transformGcpLine = [
-    transformGcpRectangle[1],
-    transformGcpRectangle[3]
-  ] as TransformGcpLine
-  const refinedTransformGcpLines = splitTransformGcpLineRecursively(
-    transformGcpLine,
+  const gcpLine = [gcpRectangle[1], gcpRectangle[3]] as TransformGcpLine
+  const refinedGcpLines = splitGcpLineRecursively(
+    gcpLine,
     refinementFunction,
     { ...refinementOptions, maxDepth: 1 },
     0
   )
 
-  if (refinedTransformGcpLines.length > 1) {
-    const newMidTransformGcp = refinedTransformGcpLines[0][1]
+  if (refinedGcpLines.length > 1) {
+    const newMidGcp = refinedGcpLines[0][1]
 
     const source01Point = refinementOptions.sourceMidPointFunction(
-      transformGcpRectangle[0].source,
-      transformGcpRectangle[1].source
+      gcpRectangle[0].source,
+      gcpRectangle[1].source
     )
-    const new01TransformGcp = {
+    const new01Gcp = {
       source: source01Point,
       destination: refinementFunction(source01Point)
     }
     const source12Point = refinementOptions.sourceMidPointFunction(
-      transformGcpRectangle[1].source,
-      transformGcpRectangle[2].source
+      gcpRectangle[1].source,
+      gcpRectangle[2].source
     )
-    const new12TransformGcp = {
+    const new12Gcp = {
       source: source12Point,
       destination: refinementFunction(source12Point)
     }
     const source23Point = refinementOptions.sourceMidPointFunction(
-      transformGcpRectangle[2].source,
-      transformGcpRectangle[3].source
+      gcpRectangle[2].source,
+      gcpRectangle[3].source
     )
-    const new23TransformGcp = {
+    const new23Gcp = {
       source: source23Point,
       destination: refinementFunction(source23Point)
     }
     const source30Point = refinementOptions.sourceMidPointFunction(
-      transformGcpRectangle[3].source,
-      transformGcpRectangle[0].source
+      gcpRectangle[3].source,
+      gcpRectangle[0].source
     )
-    const new30TransformGcp = {
+    const new30Gcp = {
       source: source30Point,
       destination: refinementFunction(source30Point)
     }
 
     return [
-      splitTransformGcpRectangleRecursively(
-        [
-          transformGcpRectangle[0],
-          new01TransformGcp,
-          newMidTransformGcp,
-          new30TransformGcp
-        ],
+      splitGcpRectangleRecursively(
+        [gcpRectangle[0], new01Gcp, newMidGcp, new30Gcp],
         refinementFunction,
         refinementOptions,
         depth + 1
       ),
-      splitTransformGcpRectangleRecursively(
-        [
-          transformGcpRectangle[1],
-          new12TransformGcp,
-          newMidTransformGcp,
-          new01TransformGcp
-        ],
+      splitGcpRectangleRecursively(
+        [gcpRectangle[1], new12Gcp, newMidGcp, new01Gcp],
         refinementFunction,
         refinementOptions,
         depth + 1
       ),
-      splitTransformGcpRectangleRecursively(
-        [
-          transformGcpRectangle[2],
-          new23TransformGcp,
-          newMidTransformGcp,
-          new12TransformGcp
-        ],
+      splitGcpRectangleRecursively(
+        [gcpRectangle[2], new23Gcp, newMidGcp, new12Gcp],
         refinementFunction,
         refinementOptions,
         depth + 1
       ),
-      splitTransformGcpRectangleRecursively(
-        [
-          transformGcpRectangle[3],
-          new30TransformGcp,
-          newMidTransformGcp,
-          new23TransformGcp
-        ],
+      splitGcpRectangleRecursively(
+        [gcpRectangle[3], new30Gcp, newMidGcp, new23Gcp],
         refinementFunction,
         refinementOptions,
         depth + 1
       )
     ].flat(1)
   } else {
-    return [transformGcpRectangle]
+    return [gcpRectangle]
   }
 }
 
-function gcpsToTransformGcpLines(
+function gcpsToGcpLines(
   gcps: TransformGcp[],
   close = false
 ): TransformGcpLine[] {
@@ -327,7 +292,7 @@ function gcpsToTransformGcpLines(
   return lines
 }
 
-function transformGcpLinesToGcps(
+function gcpLinesToGcps(
   lines: TransformGcpLine[],
   close = false
 ): TransformGcp[] {
