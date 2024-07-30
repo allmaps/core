@@ -52,7 +52,6 @@
     "dev": "vite",
     "watch": "vite build --watch",
     "build": "vite build",
-    "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "pretest": "pnpm run build",
     "test": "NODE_ENV=test mocha",

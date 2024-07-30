@@ -17,7 +17,6 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "build:dev": "vite build --mode development",
     "lerna-build": "lerna run build --scope @allmaps/tiles --include-dependencies",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

@@ -18,8 +18,7 @@ Apps:
 - [Allmaps Tile Server](apps/tileserver)
 - [Allmaps Latest](apps/latest)
 - [Allmaps CLI](apps/cli)
-  <!-- - [Allmaps Explore](apps/explore) -->
-  <!-- - [Allmaps Info](apps/info) -->
+- [Allmaps Explore](apps/explore)
 - [Allmaps IIIF Viewer](apps/iiif)
 - [Allmaps Here](apps/here)
 

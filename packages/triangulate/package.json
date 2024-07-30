@@ -37,7 +37,7 @@
   "scripts": {
     "watch": "tsc --watch",
     "bench": "node bench/index.js",
-    "build": "tsc && npm run documentation",
+    "build": "tsc",
     "preversion": "pnpm run types && pnpm run lint && pnpm test",
     "test": "NODE_ENV=test mocha",
     "pretest": "pnpm run build",
