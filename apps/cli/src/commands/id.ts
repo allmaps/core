@@ -4,8 +4,6 @@ import { generateId } from '@allmaps/id'
 
 import { readFromStdin, printString } from '../lib/io.js'
 
-// Instead of supplying input files, you can also use the standard input
-
 export default function id() {
   return new Command('id')
     .argument('[urls...]')

@@ -8,7 +8,7 @@ export default function parse() {
     .argument('[files...]')
     .summary('parse Georeference Annotation')
     .description(
-      `Parses and validates Georeference Annotations and outputs Allmaps' internal format`
+      "Parses and validates Georeference Annotations and outputs Allmaps' internal format"
     )
     .action(async (files) => {
       const jsonValues = await parseJsonInput(files as string[])

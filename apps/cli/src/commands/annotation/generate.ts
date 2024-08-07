@@ -9,7 +9,7 @@ export default function generate() {
   return new Command('generate')
     .argument('[files...]')
     .summary('generate Georeference Annotation')
-    .description(`Generate a single Georeference Annotation from input files`)
+    .description('Generate a single Georeference Annotation from input files')
     .action(async (files) => {
       const jsonValues = await parseJsonInput(files as string[])
       const maps = parseAnnotationsValidateMaps(jsonValues)

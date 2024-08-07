@@ -5,6 +5,8 @@ import { createWriteStream } from 'fs'
 import { Readable } from 'stream'
 
 import { generateId } from '@allmaps/id'
+import { fetchImageInfo } from '@allmaps/stdlib'
+import { Image as IIIFImage } from '@allmaps/iiif-parser'
 
 import { readLines } from '../../lib/io.js'
 
@@ -18,7 +20,15 @@ export default function fullImage() {
       imageIds = await readLines(imageIds)
 
       for (const imageId of imageIds) {
-        const fullImageUrl = `${imageId}/full/full/0/default.jpg`
+        const imageInfo = await fetchImageInfo(imageId)
+        const parsedImage = IIIFImage.parse(imageInfo)
+
+        let fullImageUrl
+        if (parsedImage.majorVersion >= 3) {
+          fullImageUrl = `${imageId}/full/max/0/default.jpg`
+        } else {
+          fullImageUrl = `${imageId}/full/full/0/default.jpg`
+        }
 
         const imageFilename = path.join(
           options.outputDir,
