@@ -50,7 +50,7 @@ export const Image2Context = z
 
 export const Image2Schema = z.object({
   '@id': z.string().url(),
-  '@type': z.literal('iiif:Image').optional(),
+  '@type': z.literal('iiif:Image').or(z.literal('ImageService2')).optional(),
   '@context': Image2Context,
   protocol: z.literal('http://iiif.io/api/image'),
   width: z.number().int(),
