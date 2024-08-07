@@ -11,6 +11,7 @@ Commands:
   parse [files...]     parse Georeference Annotation
   generate [files...]  generate Georeference Annotation
   svg [files...]       generate SVG from resource mask
+  image-id [files...]  read IIIF image ID from Georeference Annotation
   help [command]       display help for command
 
 For more details about Allmaps, see https://allmaps.org

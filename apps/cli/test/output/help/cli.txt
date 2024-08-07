@@ -7,10 +7,12 @@ Options:
 
 Commands:
   annotation      parse and generate Georeference Annotations
-  id [urls...]    generate Allmaps IDs from input URLs
   transform       transform resource coordinates to geospatial coordinates and
                   vice versa
   iiif            parse and generate IIIF resources
+  id [urls...]    generate Allmaps IDs from input URLs
+  fetch           fetches IIIF images
+  script          generate Bash scripts
   help [command]  display help for command
 
 For more details about Allmaps, see https://allmaps.org
