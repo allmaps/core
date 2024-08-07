@@ -4,6 +4,15 @@ import StreamValues from 'stream-json/streamers/StreamValues.js'
 
 // Read Input: files (or file) and stdin. For reading general files (svg, strings, ...).
 
+export async function readLines(lines: string[]): Promise<string[]> {
+  if (process.stdin.isTTY) {
+    return lines
+  } else {
+    const stdin = await readFromStdin()
+    return stdin.trim().split('\n')
+  }
+}
+
 export async function readInput(files: string[]): Promise<string[]> {
   if (process.stdin.isTTY) {
     // Files are listed in command

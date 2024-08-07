@@ -4,6 +4,8 @@ import { Command, CommanderError } from 'commander'
 import { fromZodError } from 'zod-validation-error'
 
 import annotation from './commands/annotation.js'
+import script from './commands/script.js'
+import fetch from './commands/fetch.js'
 import id from './commands/id.js'
 import iiif from './commands/iiif.js'
 import transform from './commands/transform.js'
@@ -16,9 +18,11 @@ const program = new Command()
   .name('allmaps')
   .exitOverride()
   .addCommand(annotation())
-  .addCommand(id())
   .addCommand(transform())
   .addCommand(iiif())
+  .addCommand(id())
+  .addCommand(fetch())
+  .addCommand(script())
   .configureHelp({
     helpWidth: fixedWidth ? 80 : undefined
   })
