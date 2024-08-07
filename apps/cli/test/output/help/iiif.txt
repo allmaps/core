@@ -8,7 +8,7 @@ Options:
   -h, --help                     display help for command
 
 Commands:
-  parse [files...]               parse IIIF resources
+  parse [options] [files...]     parse IIIF resources
   manifest [options] [files...]  generate IIIF Manifest
   help [command]                 display help for command
 

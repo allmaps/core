@@ -25,12 +25,12 @@ export type MetadataItem = {
 
 export type Metadata = MetadataItem[]
 
-export type FetchFunction = (url: string) => Promise<unknown>
-
 export type FetchNextOptions = {
   maxDepth?: number
+  fetchCollections?: boolean
   fetchManifests?: boolean
   fetchImages?: boolean
+  fetchFn: typeof fetch
 }
 
 export type FetchNextResults<Item> = {

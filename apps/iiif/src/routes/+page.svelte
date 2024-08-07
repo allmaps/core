@@ -94,7 +94,7 @@
     parsedIiif: IIIFImage | IIIFManifest | IIIFCollection
   ) {
     if (parsedIiif instanceof IIIFCollection) {
-      for await (const next of parsedIiif.fetchNext(fetchJson, {
+      for await (const next of parsedIiif.fetchNext({
         fetchImages: false
       })) {
         if (next.item instanceof IIIFManifest) {

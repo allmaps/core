@@ -42,7 +42,7 @@ async function addSource(
     annotations = [json]
   } else {
     if (parsed.iiif.type === 'collection') {
-      await parsed.iiif.fetchAll(fetchJson, {
+      await parsed.iiif.fetchAll({
         fetchManifests: true,
         fetchImages: false
       })

@@ -12,7 +12,6 @@ import type { Image } from './image.js'
 import type {
   LanguageString,
   MajorVersion,
-  FetchFunction,
   FetchNextOptions,
   FetchNextResults
 } from '../lib/types.js'
@@ -24,8 +23,10 @@ const CollectionTypeString = 'collection'
 
 const defaulfFetchNextOptions = {
   maxDepth: Number.POSITIVE_INFINITY,
+  fetchCollections: true,
   fetchManifests: true,
-  fetchImages: true
+  fetchImages: false,
+  fetchFn: globalThis.fetch
 }
 
 /**
@@ -114,12 +115,11 @@ export class Collection {
   }
 
   async fetchAll(
-    fetch: FetchFunction,
-    options: FetchNextOptions = defaulfFetchNextOptions
+    options?: Partial<FetchNextOptions>
   ): Promise<FetchNextResults<Collection | Manifest | Image>[]> {
     const results: FetchNextResults<Collection | Manifest | Image>[] = []
 
-    for await (const next of this.fetchNext(fetch, options)) {
+    for await (const next of this.fetchNext(options)) {
       results.push(next)
     }
 
@@ -127,14 +127,18 @@ export class Collection {
   }
 
   async *fetchNext(
-    fetch: FetchFunction,
-    options: FetchNextOptions = defaulfFetchNextOptions,
+    options?: Partial<FetchNextOptions>,
     depth = 0
   ): AsyncGenerator<
     FetchNextResults<Collection | Manifest | Image>,
     void,
     void
   > {
+    options = {
+      ...defaulfFetchNextOptions,
+      ...options
+    }
+
     if (options.maxDepth === undefined) {
       options.maxDepth = defaulfFetchNextOptions.maxDepth
     }
@@ -147,6 +151,11 @@ export class Collection {
       options.fetchManifests = defaulfFetchNextOptions.fetchManifests
     }
 
+    let fetchFn = defaulfFetchNextOptions.fetchFn
+    if (options.fetchFn) {
+      fetchFn = options.fetchFn
+    }
+
     if (depth >= options.maxDepth) {
       return
     }
@@ -156,11 +165,13 @@ export class Collection {
 
       if (item instanceof Manifest) {
         if (options.fetchImages) {
-          yield* item.fetchNext(fetch, depth + 1)
+          yield* item.fetchNext(fetchFn, depth + 1)
         }
       } else if (item instanceof EmbeddedManifest && options.fetchManifests) {
         const manifestUri = item.uri
-        const iiifManifest = await fetch(manifestUri)
+        const iiifManifest = await fetchFn(manifestUri).then((response) =>
+          response.json()
+        )
         const newParsedManifest = Manifest.parse(iiifManifest)
 
         this.items[itemIndex] = newParsedManifest
@@ -175,14 +186,16 @@ export class Collection {
         }
 
         if (depth + 1 < options.maxDepth && options.fetchImages) {
-          yield* newParsedManifest.fetchNext(fetch, depth + 2)
+          yield* newParsedManifest.fetchNext(fetchFn, depth + 2)
         }
-      } else if (item instanceof Collection) {
+      } else if (item instanceof Collection && options.fetchCollections) {
         // item is Collection
         // TODO: use embedded
         if (!item.items.length) {
           const collectionUri = item.uri
-          const iiifCollection = await fetch(collectionUri)
+          const iiifCollection = await fetchFn(collectionUri).then((response) =>
+            response.json()
+          )
           const newParsedCollection = Collection.parse(iiifCollection)
 
           this.items[itemIndex] = newParsedCollection
@@ -200,7 +213,7 @@ export class Collection {
         }
 
         if (depth + 1 < options.maxDepth) {
-          yield* item.fetchNext(fetch, options, depth + 2)
+          yield* item.fetchNext(options, depth + 2)
         }
       }
     }

@@ -1,4 +1,38 @@
+import { IIIF } from '@allmaps/iiif-parser'
+
 import type { EmbeddedImage } from '@allmaps/iiif-parser'
+
+type ParseOptions = {
+  fetchCollections: boolean
+  fetchManifests: boolean
+  fetchImages: boolean
+}
+
+const defaultParseOptions = {
+  fetchCollections: false,
+  fetchManifests: false,
+  fetchImages: false
+}
+
+export async function parseIiif(
+  sourceIiif: unknown,
+  options?: Partial<ParseOptions>
+) {
+  options = {
+    ...defaultParseOptions,
+    ...options
+  }
+
+  const parsedIiif = IIIF.parse(sourceIiif)
+
+  if (parsedIiif.type === 'collection') {
+    await parsedIiif.fetchAll(options)
+  } else if (parsedIiif.type === 'manifest' && options && options.fetchImages) {
+    await parsedIiif.fetchAll()
+  }
+
+  return parsedIiif
+}
 
 function generateImageService(image: EmbeddedImage) {
   const profile = image.supportsAnyRegionAndSize ? 'level1' : 'level0'

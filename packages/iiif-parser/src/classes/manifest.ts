@@ -23,7 +23,6 @@ import type {
   LanguageString,
   Metadata,
   MajorVersion,
-  FetchFunction,
   FetchNextResults
 } from '../lib/types.js'
 
@@ -139,8 +138,20 @@ export class Manifest extends EmbeddedManifest {
     return new Manifest(parsedManifest)
   }
 
+  async fetchAll(
+    fetchFn: typeof fetch = globalThis.fetch
+  ): Promise<FetchNextResults<Image>[]> {
+    const results: FetchNextResults<Image>[] = []
+
+    for await (const next of this.fetchNext(fetchFn)) {
+      results.push(next)
+    }
+
+    return results
+  }
+
   async *fetchNext(
-    fetch: FetchFunction,
+    fetchFn: typeof fetch = globalThis.fetch,
     depth = 0
   ): AsyncGenerator<FetchNextResults<Image>, void, void> {
     for (const canvasIndex in this.canvases) {
@@ -150,7 +161,9 @@ export class Manifest extends EmbeddedManifest {
       if (image.embedded) {
         const url = `${image.uri}/info.json`
 
-        const iiifManifest = await fetch(url)
+        const iiifManifest = await fetchFn(url).then((response) =>
+          response.json()
+        )
         const newImage = Image.parse(iiifManifest)
 
         canvas.image = newImage
