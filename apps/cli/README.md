@@ -12,7 +12,7 @@ npm install -g @allmaps/cli
 
 ## Usage
 
-Run Allmaps CLI in your terminal using:
+Run Allmaps CLI in your terminal:
 
 ```sh
 allmaps
@@ -65,6 +65,12 @@ Convert the resource mask from the input files to SVG polygons:
 
 ```sh
 allmaps annotation svg [files...]
+```
+
+Output the IDs of the IIIF images in the input files:
+
+```sh
+allmaps annotation image-id [files...]
 ```
 
 For all the commands above, the input files can be either Georeference Annotations or parsed Georeference Annotations
@@ -256,6 +262,81 @@ Using the same URL, but using standard input:
 echo https://digital.zlb.de/viewer/api/v1/records/34231682/manifest/ | allmaps id
 ```
 
+### Fetch IIIF images
+
+Fetches the full-size image using a given IIIF Image ID:
+
+```sh
+allmaps fetch full-image "https://images.uba.uva.nl/iiif/2/default!1!3!1!990009413700205131!HB-KZL-25-02-04.jpg"
+```
+
+> [!NOTE]
+> Not all IIIF image servers allow downloading full-sized images. This command does not yet take the image's `maxWidth`, `maxHeight` and `maxArea` properties into account.
+
+### Generate GeoTIFFs
+
+Generate a Bash script that uses GDAL to convert one or more downloaded full-size IIIF images to a GeoTIFF using a given Georeference Annotation:
+
+```sh
+curl "https://annotations.allmaps.org/images/0b9aef31f14cb5bf" | \
+  allmaps script geotiff
+```
+
+> [!NOTE]
+> The generated Bash script expects the full-size images to be available on the local file system. You can download these images manually or use the [`allmaps fetch full-image`](#fetch-iiif-images) command.
+
+#### Specifying image filenames
+
+By default, the Bash script generated with the `allmaps script geotiff` command computes the Allmaps IDs for all the IIIF Image IDs in the Georeference Annotation and looks for JPGs with the naming convention `<allmaps-id-from-image-id.jpg` in the current directory.
+
+For example, the Georeference Annotation https://annotations.allmaps.org/images/0b9aef31f14cb5bf contains a single georeferenced map from the following IIIF Image:
+
+| IIIF Image ID                                                          | Allmaps ID of IIIF Image ID | Expected filename      |
+| :--------------------------------------------------------------------- | :-------------------------- | :--------------------- |
+| `https://iiif-server.lib.uchicago.edu/ark:61001/b2mx3j80nk1f/00000001` | `0b9aef31f14cb5bf`          | `0b9aef31f14cb5bf.jpg` |
+
+You can use Allmaps CLI to extract all IIIF Image IDs from a Georeference Annotation:
+
+```sh
+curl "https://annotations.allmaps.org/images/0b9aef31f14cb5bf" | \
+  allmaps annotation image-id
+```
+
+This will output:
+
+```bash
+https://iiif-server.lib.uchicago.edu/ark:61001/b2mx3j80nk1f/00000001
+```
+
+The `allmaps id` command generated the Allmaps ID from this IIIF Image ID:
+
+```sh
+curl "https://annotations.allmaps.org/images/0b9aef31f14cb5bf" | \
+  allmaps annotation image-id | \
+  allmaps id
+```
+
+Output:
+
+```bash
+0b9aef31f14cb5bf
+```
+
+You can override the default behavior by supplying a JSON file that maps IIIF Image IDs to local image filenames:
+
+```sh
+curl "https://annotations.allmaps.org/images/0b9aef31f14cb5bf" | \
+  allmaps script geotiff --image-filenames-file /path/to/image-filenames.json
+```
+
+The file `/path/to/image-filenames.json` should contain a JSON object with IIIF Image IDs as keys and local image filenames as values:
+
+```json
+{
+  "https://iiif-server.lib.uchicago.edu/ark:61001/b2mx3j80nk1f/00000001": "/path/to/image1.jpg"
+}
+```
+
 ## Examples
 
 ### Turn resource masks of georeferenced maps into GeoJSON
@@ -311,4 +392,18 @@ If you have a directory containing multiple Georeference Annotations, you can ru
 
 ```bash
 cat *.json | allmaps annotation generate
+```
+
+### Use GDAL to generate an XYZ tile layer from a Georeference Annotation
+
+```bash
+curl "https://annotations.allmaps.org/maps/096f57b5ff35b3eb" | \
+  allmaps annotation image-id | \
+  allmaps fetch full-image
+
+curl "https://annotations.allmaps.org/maps/096f57b5ff35b3eb" | \
+  allmaps script geotiff | \
+  bash
+
+gdal2tiles.py --xyz 096f57b5ff35b3eb.vrt 096f57b5ff35b3eb
 ```
