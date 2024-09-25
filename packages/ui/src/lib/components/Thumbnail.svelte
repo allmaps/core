@@ -7,6 +7,7 @@
   export let width: number
   export let height = width
   export let mode: Fit = 'cover'
+  export let alt: string | undefined = undefined
 
   let imageRequest: ImageRequest | ImageRequest[][] | undefined = undefined
 
@@ -54,7 +55,7 @@
       class="w-full h-full {mode === 'cover'
         ? 'object-cover'
         : 'object-contain'}"
-      alt={`Thumbnail for ${parsedImage.uri}`}
+      alt={alt || `Thumbnail for ${parsedImage.uri}`}
       src={parsedImage.getImageUrl(imageRequest)}
     />
   {:else if imageRequest && Array.isArray(imageRequest)}
@@ -81,7 +82,8 @@
           <img
             class="h-auto max-w-full"
             src={parsedImage.getImageUrl(tile)}
-            alt={`Thumbnail for ${parsedImage.uri} (${rowIndex}, ${columnIndex})`}
+            alt={alt ||
+              `Thumbnail for ${parsedImage.uri} (${rowIndex}, ${columnIndex})`}
           />
         {/each}
       {/each}
