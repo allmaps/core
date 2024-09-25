@@ -1,7 +1,17 @@
 {
   "name": "@allmaps/editor",
-  "version": "2.0.0@beta-0",
+  "version": "2.0.0-alpha.0",
   "private": true,
+  "author": {
+    "name": "Bert Spaan",
+    "email": "hello@bertspaan.nl",
+    "url": "https://bertspaan.nl"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/allmaps/allmaps.git",
+    "directory": "apps/editor"
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
@@ -13,29 +23,46 @@
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "^3.0.0",
-    "@sveltejs/kit": "^2.0.0",
+    "@sveltejs/kit": "^2.5.0",
     "@sveltejs/vite-plugin-svelte": "^3.0.0",
+    "@types/diff-match-patch": "^1.0.36",
     "@types/eslint": "^8.56.7",
+    "@types/lodash-es": "^4.17.6",
+    "@types/sharedb": "^3.3.11",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-svelte": "^2.36.0",
     "globals": "^15.0.0",
+    "phosphor-svelte": "^2.0.1",
     "prettier": "^3.1.1",
     "prettier-plugin-svelte": "^3.1.2",
-    "svelte": "^5.0.0-next.1",
+    "svelte": "^5.0.0-next.258",
     "svelte-check": "^3.6.0",
+    "tailwindcss": "^3.3.3",
     "tslib": "^2.4.1",
-    "typescript": "^5.0.0",
+    "typescript": "^5.5.0",
     "typescript-eslint": "^8.0.0-alpha.20",
     "vite": "^5.0.3"
   },
   "type": "module",
   "dependencies": {
     "@allmaps/annotation": "^1.0.0-beta.27",
+    "@allmaps/id": "^1.0.0-beta.27",
     "@allmaps/iiif-parser": "^1.0.0-beta.37",
     "@allmaps/maplibre": "^1.0.0-beta.25",
     "@allmaps/stdlib": "^1.0.0-beta.28",
-    "maplibre-gl": "^4.0.0",
-    "terra-draw": "0.0.1-alpha.68"
+    "@allmaps/tailwind": "^1.0.0-beta.12",
+    "@allmaps/transform": "^1.0.0-beta.38",
+    "@allmaps/ui": "1.0.0-beta.29",
+    "bits-ui": "^0.21.11",
+    "diff-match-patch": "^1.0.5",
+    "json0-ot-diff": "^1.1.2",
+    "lodash-es": "^4.17.21",
+    "ol": "^9.1.0",
+    "ot-json1": "^1.0.2",
+    "reconnecting-websocket": "^4.4.0",
+    "sharedb": "^5.0.2",
+    "sharedb-client-browser": "^5.0.2",
+    "shiki": "^1.11.1"
   }
 }

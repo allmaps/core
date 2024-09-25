@@ -10,5 +10,11 @@ export default defineConfig({
   plugins: [sveltekit()],
   ssr: {
     noExternal: 'maplibre-gl'
+  },
+  optimizeDeps: {
+    include: [
+      // 'sharedb/lib/client',
+      'sharedb-client-browser/dist/sharedb-client-umd.cjs'
+    ]
   }
 })
