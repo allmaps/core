@@ -22,3 +22,5 @@ export function highlight(json: unknown) {
 
   return ''
 }
+
+initialize()
