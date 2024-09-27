@@ -54,7 +54,7 @@ const ImageTypeString = 'image'
  * @property {number} height - Height of Image
  */
 export class EmbeddedImage {
-  embedded = true
+  readonly embedded: boolean = true
 
   uri: string
   type: typeof ImageTypeString = ImageTypeString
@@ -326,7 +326,7 @@ export class Image extends EmbeddedImage {
   tileZoomLevels: TileZoomLevel[]
   sizes?: SizeObject[]
 
-  embedded = false
+  readonly embedded = false
 
   constructor(parsedImage: ImageType) {
     super(parsedImage)

@@ -7,7 +7,8 @@ import {
 } from '../schemas/iiif.js'
 
 import { EmbeddedManifest, Manifest } from './manifest.js'
-import type { Image } from './image.js'
+import type { Image, EmbeddedImage } from './image.js'
+import type { Canvas } from './canvas.js'
 
 import type {
   LanguageString,
@@ -112,6 +113,24 @@ export class Collection {
     }
 
     return new Collection(parsedCollection)
+  }
+
+  get canvases(): Canvas[] {
+    const initialValue: Canvas[] = []
+
+    return this.items.reduce((canvases, item) => {
+      if (item instanceof Manifest) {
+        return [...canvases, ...item.canvases]
+      } else if (item instanceof EmbeddedManifest) {
+        return canvases
+      } else {
+        return [...canvases, ...item.canvases]
+      }
+    }, initialValue)
+  }
+
+  get images(): (Image | EmbeddedImage)[] {
+    return this.canvases.map((canvas) => canvas.image)
   }
 
   async fetchAll(

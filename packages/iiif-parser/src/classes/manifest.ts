@@ -9,7 +9,7 @@ import {
 import { EmbeddedManifest2Schema } from '../schemas/presentation.2.js'
 import { EmbeddedManifest3Schema } from '../schemas/presentation.3.js'
 
-import { Image } from './image.js'
+import { Image, EmbeddedImage } from './image.js'
 import { Canvas } from './canvas.js'
 
 import {
@@ -43,7 +43,7 @@ const ManifestTypeString = 'manifest'
  * @property {string} [type] - Resource type, equals 'manifest'
  */
 export class EmbeddedManifest {
-  embedded = true
+  readonly embedded: boolean = true
 
   uri: string
   type: typeof ManifestTypeString = ManifestTypeString
@@ -87,7 +87,7 @@ export class Manifest extends EmbeddedManifest {
   description?: LanguageString
   metadata?: Metadata
 
-  embedded = false
+  readonly embedded = false
 
   constructor(parsedManifest: ManifestType) {
     super(parsedManifest)
@@ -138,6 +138,25 @@ export class Manifest extends EmbeddedManifest {
     return new Manifest(parsedManifest)
   }
 
+  get images() {
+    return this.canvases.map((canvas) => canvas.image)
+  }
+
+  async #fetchImage(
+    image: Image | EmbeddedImage,
+    fetchFn: typeof fetch
+  ): Promise<Image> {
+    if (image instanceof EmbeddedImage) {
+      const url = `${image.uri}/info.json`
+
+      const iiifImage = await fetchFn(url).then((response) => response.json())
+      const fetchedImage = Image.parse(iiifImage)
+      return fetchedImage
+    } else {
+      return image
+    }
+  }
+
   async fetchAll(
     fetchFn: typeof fetch = globalThis.fetch
   ): Promise<FetchNextResults<Image>[]> {
@@ -154,35 +173,32 @@ export class Manifest extends EmbeddedManifest {
     fetchFn: typeof fetch = globalThis.fetch,
     depth = 0
   ): AsyncGenerator<FetchNextResults<Image>, void, void> {
-    for (const canvasIndex in this.canvases) {
-      const canvas = this.canvases[canvasIndex]
-      const image = canvas.image
+    for (const canvas of this.canvases) {
+      const fetchedImage = await this.#fetchImage(canvas.image, fetchFn)
+      canvas.image = fetchedImage
 
-      if (image.embedded) {
-        const url = `${image.uri}/info.json`
-
-        const iiifManifest = await fetchFn(url).then((response) =>
-          response.json()
-        )
-        const newImage = Image.parse(iiifManifest)
-
-        canvas.image = newImage
-
-        yield {
-          item: newImage,
-          depth,
-          parent: {
-            uri: this.uri,
-            type: this.type
-          }
+      yield {
+        item: fetchedImage,
+        depth,
+        parent: {
+          uri: this.uri,
+          type: this.type
         }
       }
     }
   }
 
   // TODO: implement fetchByUri function, also for collections
-  // async fetchImageByUri(fetch: FetchFunction, uri: string) {
-  //   //
-  //   canvases
-  // }
+  async fetchImageByUri(
+    imageUri: string,
+    fetchFn: typeof fetch = globalThis.fetch
+  ) {
+    for (const canvas of this.canvases) {
+      if (canvas.image.uri === imageUri) {
+        const fetchedImage = await this.#fetchImage(canvas.image, fetchFn)
+        canvas.image = fetchedImage
+        return fetchedImage
+      }
+    }
+  }
 }
