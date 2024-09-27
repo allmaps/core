@@ -1,7 +1,4 @@
 <script lang="ts">
-  import { uniqBy } from 'lodash-es'
-
-  import { fetchImageInfo } from '@allmaps/stdlib'
   import { Loading, Collection, Thumbnail } from '@allmaps/ui'
 
   import { Pagination, Tooltip } from 'bits-ui'
@@ -13,16 +10,12 @@
 
   import { flyAndScale } from '$lib/shared/transitions.js'
 
-  type Example = {
-    title: string
-    manifestId: string
-    imageId: string
-  }
+  import { getExamplesState } from '$lib/state/examples.svelte.js'
+  import { getImageInfoState } from '$lib/state/image-info.svelte.js'
 
-  let examples = $state<Example[]>([])
-  const loading = $derived(examples.length === 0)
+  const examplesState = getExamplesState()
+  const imageInfoState = getImageInfoState()
 
-  const count = 300
   const perPage = 30
 
   const maxPopupTextLength = 125
@@ -32,31 +25,25 @@
       ? `${text.slice(0, maxPopupTextLength)}…`
       : text
   }
-
-  async function fetchExamples() {
-    const fetchedExamples = (await fetch(
-      `https://sammeltassen-allmaps.web.val.run/?count=${count}`
-    ).then((response) => response.json())) as Example[]
-
-    examples = uniqBy(fetchedExamples, (example) => example.imageId)
-  }
-
-  $effect(() => {
-    fetchExamples()
-  })
 </script>
 
-{#if loading}
+{#if examplesState.loading}
   <div class="w-full h-[50vh] flex flex-col items-center justify-center">
     <Loading />
     <div>Loading examples</div>
   </div>
 {:else}
-  <Pagination.Root count={examples.length} {perPage} let:pages let:range>
-    {@const page = examples.slice(range.start, range.end)}
+  <Pagination.Root
+    count={examplesState.examples.length}
+    bind:page={examplesState.page}
+    {perPage}
+    let:pages
+    let:range
+  >
+    {@const page = examplesState.examples.slice(range.start, range.end)}
     <Collection>
       {#each page as example (example.imageId)}
-        {#await fetchImageInfo(example.imageId.replace('/info.json', ''))}
+        {#await imageInfoState.fetchImageInfo(example.imageId.replace('/info.json', ''))}
           <div class="w-full aspect-square">
             <p>Loading…</p>
           </div>

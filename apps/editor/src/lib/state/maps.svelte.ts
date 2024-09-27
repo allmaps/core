@@ -37,7 +37,7 @@ import type {
 } from '$lib/shared/types.js'
 
 // TODO: read from env
-const API_URL = 'https://dev.api.allmaps.org'
+// const API_URL = 'https://dev.api.allmaps.org'
 const WS_API_URL = 'wss://dev.api.allmaps.org'
 
 const MAPS_KEY = Symbol('maps')
@@ -112,8 +112,7 @@ export class MapsState extends MapsEventTarget {
       if (sourceState.activeImageId) {
         this.#imageId = sourceState.activeImageId
 
-        // TODO: make sure info.json is loaded before connecting
-        console.log('Make sure info.json is loaded', this.#imageId)
+        sourceState.fetchImageInfo(this.#imageId)
 
         if (!this.#connecting) {
           this.#connected = false
@@ -147,6 +146,11 @@ export class MapsState extends MapsEventTarget {
   }
 
   #handleSnapshot(err?: Error) {
+    if (err) {
+      console.error(err)
+      return
+    }
+
     if (!this.#doc) {
       return
     }
@@ -172,7 +176,7 @@ export class MapsState extends MapsEventTarget {
     this.#connecting = false
   }
 
-  #handleRemoteOperation(op: unknown, localOperation: boolean | any) {
+  #handleRemoteOperation(op: unknown) {
     if (op) {
       this.#maps = this.#doc.data
 

@@ -42,6 +42,7 @@ export function resourceMaskToPolygon(resourceMask: ResourceMask) {
   ]
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function deleteCondition(event: MapBrowserEvent<any>) {
   return shiftKeyOnly(event) && singleClick(event)
 }
@@ -154,7 +155,8 @@ export function getGeoMaskPolygon(map: DbMap): Polygon | undefined {
     ]
 
     return new Polygon(projectedPolygon)
-  } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (err) {
     // Error transforming resource mask to geo mask,
     // map probably does not have enough GCPs
     return

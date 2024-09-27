@@ -25,7 +25,7 @@ function getImagesInternal(
 export function getImages(
   parsedIiif: IIIFImage | IIIFManifest | IIIFCollection
 ): (IIIFImage | EmbeddedIIIFImage)[] {
-  let images: (IIIFImage | EmbeddedIIIFImage)[] = []
+  const images: (IIIFImage | EmbeddedIIIFImage)[] = []
   if (parsedIiif.type === 'image') {
     images.push(parsedIiif)
   } else {

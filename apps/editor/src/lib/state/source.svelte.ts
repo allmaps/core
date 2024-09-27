@@ -8,8 +8,6 @@ import { generateId } from '@allmaps/id'
 import { UrlState } from '$lib/state/url.svelte'
 import { ErrorState } from '$lib/state/error.svelte'
 
-import { getImages } from '$lib/shared/iiif.js'
-
 import type {
   Image as IIIFImage,
   EmbeddedImage as EmbeddedIIIFImage,
@@ -26,13 +24,17 @@ export class SourceState {
   #errorState: ErrorState
 
   #source = $state<Source>()
-  // #items = $state<(IIIFCollection | IIIFManifest | IIIFImage)[]>([])
 
   #loading = $state(false)
 
-  #images = $state<(IIIFImage | EmbeddedIIIFImage)[]>([])
+  #imagesByImageId = $state<SvelteMap<string, IIIFImage | EmbeddedIIIFImage>>(
+    new SvelteMap()
+  )
+
+  #imageCount = $derived(this.#imagesByImageId.size)
+
   #canvasesByImageId = $state<SvelteMap<string, IIIFCanvas>>(new SvelteMap())
-  #imagesAllmapsIds = $state<SvelteMap<string, string>>(new SvelteMap())
+  #allmapsIdsByImageId = $state<SvelteMap<string, string>>(new SvelteMap())
 
   constructor(urlState: UrlState, errorState: ErrorState) {
     this.#urlState = urlState
@@ -41,12 +43,45 @@ export class SourceState {
     $effect(() => {
       const url = urlState.urlParam
 
+      this.#reset()
+
       if (url) {
         this.#load(url)
-      } else {
-        this.#reset()
       }
     })
+  }
+
+  get imagesByImageId() {
+    return this.#imagesByImageId
+  }
+
+  async fetchImageInfo(imageId: string) {
+    if (this.#source?.type === 'manifest') {
+      const canvas = this.getCanvasByImageId(imageId)
+      const image = canvas?.image
+
+      if (image?.embedded) {
+        const fetchedImage =
+          await this.#source.parsedIiif.fetchImageByUri(imageId)
+
+        if (fetchedImage) {
+          if (imageId === fetchedImage.uri) {
+            this.#imagesByImageId.set(imageId, fetchedImage)
+          } else {
+            console.warn("Image IDs don't match:", imageId, fetchedImage.uri)
+
+            this.#imagesByImageId.delete(imageId)
+            this.#imagesByImageId.set(fetchedImage.uri, fetchedImage)
+            // TODO: update #canvasesByImageId
+
+            this.#allmapsIdsByImageId.set(
+              fetchedImage.uri,
+              await generateId(fetchedImage.uri)
+            )
+          }
+        }
+      }
+    }
   }
 
   async #fetchCollectionManifestsAndAddImages(parsedIiif: IIIFCollection) {
@@ -57,9 +92,9 @@ export class SourceState {
     })) {
       if (next.item.type === 'manifest') {
         for (const canvas of next.item.canvases) {
-          this.#images.push(canvas.image)
+          this.#imagesByImageId.set(canvas.image.uri, canvas.image)
           this.#canvasesByImageId.set(canvas.image.uri, canvas)
-          this.#imagesAllmapsIds.set(
+          this.#allmapsIdsByImageId.set(
             canvas.image.uri,
             await generateId(canvas.image.uri)
           )
@@ -75,36 +110,54 @@ export class SourceState {
 
       let sourceType: SourceType
 
+      const baseSource = {
+        url,
+        allmapsId: await generateId(parsedIiif.uri),
+        sourceIiif
+      }
+
+      let source: Source
+
       if (parsedIiif.type === 'collection') {
         sourceType = 'collection'
         await this.#fetchCollectionManifestsAndAddImages(parsedIiif)
+
+        source = {
+          ...baseSource,
+          type: sourceType,
+          parsedIiif
+        }
       } else if (parsedIiif.type === 'manifest') {
         sourceType = 'manifest'
         for (const canvas of parsedIiif.canvases) {
-          this.#images.push(canvas.image)
+          this.#imagesByImageId.set(canvas.image.uri, canvas.image)
           this.#canvasesByImageId.set(canvas.image.uri, canvas)
-          this.#imagesAllmapsIds.set(
+          this.#allmapsIdsByImageId.set(
             canvas.image.uri,
             await generateId(canvas.image.uri)
           )
         }
+
+        source = {
+          ...baseSource,
+          type: sourceType,
+          parsedIiif
+        }
       } else if (parsedIiif.type === 'image') {
         sourceType = 'image'
-        this.#images.push(parsedIiif)
-        this.#imagesAllmapsIds.set(
+        this.#imagesByImageId.set(parsedIiif.uri, parsedIiif)
+        this.#allmapsIdsByImageId.set(
           parsedIiif.uri,
           await generateId(parsedIiif.uri)
         )
+
+        source = {
+          ...baseSource,
+          type: sourceType,
+          parsedIiif
+        }
       } else {
         throw new Error('Unknown IIIF type')
-      }
-
-      const source: Source = {
-        url,
-        allmapsId: await generateId(parsedIiif.uri),
-        type: sourceType,
-        sourceIiif,
-        parsedIiif
       }
 
       this.#source = source
@@ -117,21 +170,19 @@ export class SourceState {
   }
 
   #isImageIdValid(imageId: string | null) {
-    if (imageId) {
-      const index = this.images.findIndex((image) => image.uri === imageId)
-
-      return index > -1
+    if (!imageId) {
+      return false
     }
 
-    return false
+    return this.#imagesByImageId.has(imageId)
   }
 
   #reset() {
     this.#loading = false
     this.#source = undefined
-    this.#images = []
+    this.#imagesByImageId = new SvelteMap()
     this.#canvasesByImageId = new SvelteMap()
-    this.#imagesAllmapsIds = new SvelteMap()
+    this.#allmapsIdsByImageId = new SvelteMap()
   }
 
   get source() {
@@ -143,7 +194,11 @@ export class SourceState {
   }
 
   get images() {
-    return this.#images
+    return this.#imagesByImageId.values()
+  }
+
+  get imageCount() {
+    return this.#imageCount
   }
 
   get loading() {
@@ -165,11 +220,18 @@ export class SourceState {
       return this.#urlState.imageIdParam
     }
 
-    return this.#images[0]?.uri
+    const imagesArray = [...this.images]
+    const firstImage = imagesArray[0]
+
+    if (firstImage) {
+      return firstImage.uri
+    }
   }
 
   get activeImageIndex(): number | undefined {
-    const index = this.images.findIndex(
+    const imagesArray = [...this.images]
+
+    const index = imagesArray.findIndex(
       (image) => image.uri === this.activeImageId
     )
 
@@ -177,7 +239,9 @@ export class SourceState {
   }
 
   get activeImage() {
-    return this.images.find((image) => image.uri === this.activeImageId)
+    if (this.activeImageId) {
+      return this.#imagesByImageId.get(this.activeImageId)
+    }
   }
 
   get activeCanvas() {
@@ -188,60 +252,44 @@ export class SourceState {
 
   get activeImageAllmapsId() {
     if (this.activeImageId) {
-      return this.#imagesAllmapsIds.get(this.activeImageId)
+      return this.#allmapsIdsByImageId.get(this.activeImageId)
     }
   }
 
   getPreviousActiveImageId() {
-    const activeImageIndex = this.images.findIndex(
+    const imagesArray = [...this.images]
+
+    const activeImageIndex = imagesArray.findIndex(
       (image) => image.uri === this.activeImageId
     )
-    const previousImage =
-      this.images[
-        (activeImageIndex - 1 + this.images.length) % this.images.length
-      ]
 
-    return previousImage.uri
+    if (activeImageIndex > -1) {
+      const previousImage =
+        imagesArray[
+          (activeImageIndex - 1 + imagesArray.length) % imagesArray.length
+        ]
+
+      return previousImage.uri
+    }
   }
 
   getNextActiveImageId() {
-    const activeImageIndex = this.images.findIndex(
+    const imagesArray = [...this.images]
+
+    const activeImageIndex = imagesArray.findIndex(
       (image) => image.uri === this.activeImageId
     )
-    const nextImage = this.images[(activeImageIndex + 1) % this.images.length]
 
-    return nextImage.uri
+    if (activeImageIndex > -1) {
+      const nextImage = imagesArray[(activeImageIndex + 1) % imagesArray.length]
+
+      return nextImage.uri
+    }
   }
 
   getCanvasByImageId(imageId: string) {
     return this.#canvasesByImageId.get(imageId)
   }
-
-  // getImageById(id: string) {
-  //   return this.#imagesById.get(id)
-  // }
-
-  // async fetchImageById(imageId: string) {
-  //   // TODO: check if imageId is in images
-
-  //   if (this.#imagesById.has(imageId)) {
-  //     return this.#imagesById.get(imageId)
-  //   } else {
-  //     const imageInfo = await fetchImageInfo(imageId)
-  //     const parsedIiif = IIIFImage.parse(imageInfo)
-
-  //     const sourceImage: SourceImage = {
-  //       url: `${imageId}/info.json`,
-  //       allmapsId: await generateId(parsedIiif.uri),
-  //       sourceIiif: imageInfo,
-  //       parsedIiif
-  //     }
-
-  //     this.#imagesById.set(imageId, sourceImage)
-
-  //     return sourceImage
-  //   }
-  // }
 }
 
 export function setSourceState(urlState: UrlState, errorState: ErrorState) {

@@ -1,28 +1,21 @@
 <script lang="ts">
   import { slide } from 'svelte/transition'
-  import { page } from '$app/stores'
-
-  import { Popover } from 'bits-ui'
 
   import { Trash as TrashIcon } from 'phosphor-svelte'
 
   import { getResourceMask } from '$lib/shared/maps.js'
   import { getMaskDimensions, getMaskExtent } from '$lib/shared/geometry.js'
-  import { createRouteUrl, getRouteId, gotoRoute } from '$lib/shared/router.js'
   import { roundWithDecimals } from '$lib/shared/math.js'
 
   import { getMapsState } from '$lib/state/maps.svelte.js'
 
-  import type {
-    DbMap1,
-    DbMap2,
-    DbMap,
-    ResourceMask
-  } from '$lib/shared/types.js'
+  import type { DbMap } from '$lib/shared/types.js'
 
   const mapsState = getMapsState()
 
-  let mapCount = $derived(Object.values(mapsState.maps).length)
+  let mapCount = $derived(
+    mapsState.maps ? Object.values(mapsState.maps).length : 0
+  )
 
   function hasResourceMask(map: DbMap) {
     const resourceMask = getResourceMask(map)
@@ -71,10 +64,10 @@
 </script>
 
 {#if mapCount === 0}
-  <div>first georeference</div>
+  <div>Start by georeference this image</div>
 {:else}
   <ol class="space-y-2">
-    {#each Object.values(mapsState.maps) as map, index}
+    {#each Object.values(mapsState.maps || {}) as map, index}
       {@const gcpCount = Object.values(map.gcps).length}
       {@const isActiveMap = mapsState.activeMapId === map.id}
       <li class="space-y-2" transition:slide={{ duration: 250, axis: 'y' }}>
@@ -97,11 +90,6 @@
                     class:fill-none={mapsState.activeMapId !== map.id}
                   />
                 </svg>
-                <!-- <div
-                class="absolute top-0 w-full h-full flex items-center justify-center"
-              >
-                <span>{index + 1}</span>
-              </div> -->
               </div>
             {/if}
             <span>Map {index + 1}</span>

@@ -13,6 +13,8 @@
   import { setMapsHistoryState } from '$lib/state/maps-history.svelte.js'
   import { setMapsMergedState } from '$lib/state/maps-merged.svelte.js'
   import { setApiState } from '$lib/state/api.svelte.js'
+  import { setExamplesState } from '$lib/state/examples.svelte.js'
+  import { setImageInfoState } from '$lib/state/image-info.svelte.js'
 
   import { Header, Stats, Loading } from '@allmaps/ui'
 
@@ -26,15 +28,21 @@
     MapPinSimple as MapPinSimpleIcon
   } from 'phosphor-svelte'
 
+  import type { Snippet } from 'svelte'
+
   import '../app.css'
   import '@allmaps/ui/css/fonts.css'
 
   import 'ol/ol.css'
 
+  const { children }: { children: Snippet } = $props()
+
   const urlState = setUrlState($page.url)
   const errorState = setErrorState()
+  setExamplesState()
 
   setUiState()
+  setImageInfoState()
 
   const sourceState = setSourceState(urlState, errorState)
   const apiState = setApiState(sourceState)
@@ -151,7 +159,8 @@
             class="absolute bottom-0 w-full z-50 p-2 flex gap-2 justify-between min-w-0 pointer-events-none [&>*]:pointer-events-auto"
           >
             <div class="flex flex-col justify-end min-w-0 shrink-0">
-              {#if sourceState.images.length > 1}
+
+              {#if sourceState.imageCount > 1}
                 <ImageSelector />
               {/if}
             </div>
@@ -161,7 +170,7 @@
           </div>
         {/if}
         <div class="absolute w-full h-full top-0 left-0">
-          <slot />
+          {@render children()}
         </div>
       {/if}
     </div>

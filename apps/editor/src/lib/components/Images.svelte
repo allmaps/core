@@ -1,17 +1,18 @@
 <script lang="ts">
   import { page } from '$app/stores'
 
-  import { fetchImageInfo } from '@allmaps/stdlib'
   import { Collection, Thumbnail } from '@allmaps/ui'
 
   import Status from '$lib/components/Status.svelte'
 
   import { createRouteUrl, gotoRoute } from '$lib/shared/router'
-
-  import { getSourceState } from '$lib/state/source.svelte.js'
   import { parseLanguageString } from '$lib/shared/iiif.js'
 
+  import { getSourceState } from '$lib/state/source.svelte.js'
+  import { getImageInfoState } from '$lib/state/image-info.svelte.js'
+
   const sourceState = getSourceState()
+  const imageInfoState = getImageInfoState()
 
   function handleImageClick(event: Event, imageId: string) {
     gotoRoute(createRouteUrl($page, 'images', { image: imageId }))
@@ -29,10 +30,11 @@
 </script>
 
 <div class="max-w-screen-lg m-auto p-4">
-  {#if sourceState.images}
+  {#if sourceState.imageCount > 0}
     <Collection>
-      {#each sourceState.images as image, index (image.uri)}
+      {#each [...sourceState.images] as image (image.uri)}
         {@const canvas = sourceState.getCanvasByImageId(image.uri)}
+
         <a
           onclick={(event) => handleImageClick(event, image.uri)}
           ondblclick={(event) => handleImageDblclick(event, image.uri)}
@@ -41,23 +43,16 @@
         >
           <div class="relative">
             <!-- TODO: move to load function -->
-            {#await fetchImageInfo(image.uri)}
+            {#await imageInfoState.fetchImageInfo(image.uri)}
               <div class="aspect-square bg-white/50 p-2">
                 <p>Loading…</p>
               </div>
             {:then imageInfo}
-              {#if index % 2 !== 110}
-                <!-- TODO: add title as alt -->
-                <Thumbnail
-                  {imageInfo}
-                  width={300}
-                  alt={parseLanguageString(canvas?.label, 'en')}
-                />
-              {:else}
-                <div class="aspect-square bg-white/50 p-2">
-                  <p>Loading…</p>
-                </div>
-              {/if}
+              <Thumbnail
+                {imageInfo}
+                width={300}
+                alt={parseLanguageString(canvas?.label, 'en')}
+              />
             {:catch error}
               <div>
                 <p class="aspect-square">{error.message}</p>

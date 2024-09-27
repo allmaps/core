@@ -1,27 +1,23 @@
 import { setContext, getContext } from 'svelte'
 
-import { parseAnnotation, validateMap } from '@allmaps/annotation'
+import { validateMap } from '@allmaps/annotation'
 
-import { fetchMaps } from '$lib/shared/api.js'
+import { fetchMaps, checkSource, createSource } from '$lib/shared/api.js'
 
 import type { Map as GeoreferencedMap } from '@allmaps/annotation'
 
-import type { Source } from '$lib/shared/types.js'
+import type { GeoreferencedMapsByImageId, Source } from '$lib/shared/types.js'
 import type { SourceState } from '$lib/state/source.svelte.js'
-
-// PUT when new source
-
-// GET maps/:id
-
-// merge
 
 const API_KEY = Symbol('api')
 
 export class ApiState {
   #maps: GeoreferencedMap[] = $state([])
 
+  #fetched = $state(false)
+
   #mapsByImageId = $derived.by(() => {
-    const mapsByImageId: Record<string, GeoreferencedMap[]> = {}
+    const mapsByImageId: GeoreferencedMapsByImageId = {}
 
     this.#maps.forEach((map) => {
       if (!mapsByImageId[map.resource.id]) {
@@ -37,21 +33,43 @@ export class ApiState {
   constructor(sourceState: SourceState) {
     $effect(() => {
       if (sourceState.source) {
-        this.fetchAnnotations(sourceState.source)
+        this.#fetchMapsOrCreateSource(sourceState.source)
       }
     })
   }
 
-  async fetchAnnotations(source: Source) {
-    // TODO: if fetch fails, PUT source to API
-    console.log('Create resource in API if 404', source.url)
+  async #fetchMapsOrCreateSource(source: Source) {
+    try {
+      this.#maps = await this.#fetchMaps(source)
+    } catch {
+      this.#createSource(source)
+    } finally {
+      this.#fetched = true
+    }
+  }
+
+  async #createSource(source: Source) {
+    try {
+      await checkSource(source)
+    } catch {
+      // If fetch fails, resource does not exist in Allmaps API
+      // PUT source to API to create resource
+      try {
+        await createSource(source)
+      } catch {
+        console.error('Error creating source in Allmaps API:', source.url)
+      }
+    }
+  }
+
+  async #fetchMaps(source: Source) {
     const fetchedMaps = await fetchMaps(source)
     const mapOrMaps = validateMap(fetchedMaps)
 
     if (Array.isArray(mapOrMaps)) {
-      this.#maps = mapOrMaps
+      return mapOrMaps
     } else {
-      this.#maps = [mapOrMaps]
+      return [mapOrMaps]
     }
   }
 
@@ -61,6 +79,10 @@ export class ApiState {
 
   get mapsByImageId() {
     return this.#mapsByImageId
+  }
+
+  get fetched() {
+    return this.#fetched
   }
 }
 

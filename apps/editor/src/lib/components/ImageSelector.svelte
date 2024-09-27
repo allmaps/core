@@ -40,7 +40,7 @@
 
     <div>
       <span class="hidden md:inline-block">Image&nbsp;</span
-      >{sourceState.activeImageIndex + 1} / {sourceState.images.length}
+      >{sourceState.activeImageIndex + 1} / {sourceState.imageCount}
     </div>
     {#if canvasLabel}
       <span class="hidden md:inline-block italic"

@@ -5,7 +5,7 @@ const ERROR_KEY = Symbol('error')
 export class ErrorState {
   #error = $state<Error | null>(null)
 
-  set error(error: any) {
+  set error(error: unknown) {
     if (error instanceof Error) {
       this.#error = error
     } else {

@@ -20,7 +20,7 @@
   })
 
   const metadata = $derived.by(() => {
-    if (parsedIiif?.type === 'manifest' && !parsedIiif.embedded) {
+    if (parsedIiif?.type === 'manifest') {
       return parsedIiif.metadata
     }
   })
@@ -59,5 +59,7 @@
   >
 </div>
 <div>
-  {sourceState.activeImage?.width} × {sourceState.activeImage?.height} pixels
+  {#if sourceState.activeImage && !sourceState.activeImage.embedded}
+    {sourceState.activeImage?.width} × {sourceState.activeImage?.height} pixels
+  {/if}
 </div>

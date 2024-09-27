@@ -1,10 +1,10 @@
 import type {
   Image as IIIFImage,
-  EmbeddedImage as EmbeddedIIIFImage,
   Manifest as IIIFManifest,
   Collection as IIIFCollection
 } from '@allmaps/iiif-parser'
 import type { TransformationType } from '@allmaps/transform'
+import type { Map as GeoreferencedMap } from '@allmaps/annotation'
 
 export type Params = {
   url: string | null
@@ -20,13 +20,31 @@ export type Scope = 'images' | 'image' | 'map'
 
 export type SourceType = 'image' | 'manifest' | 'collection'
 
-export type Source = {
+type BaseSource = {
   url: string
   allmapsId: string
   sourceIiif: unknown
   type: SourceType
   parsedIiif: IIIFImage | IIIFManifest | IIIFCollection
 }
+
+type ImageSource = {
+  type: 'image'
+  parsedIiif: IIIFImage
+}
+
+type ManifestSource = {
+  type: 'manifest'
+  parsedIiif: IIIFManifest
+}
+
+type CollectionSource = {
+  type: 'collection'
+  parsedIiif: IIIFCollection
+}
+
+export type Source = BaseSource &
+  (ImageSource | ManifestSource | CollectionSource)
 
 export type DbImageService = 'ImageService1' | 'ImageService2' | 'ImageService3'
 
@@ -37,6 +55,8 @@ export type GCP = {
 }
 
 export type ResourceMask = Point[]
+
+export type GeoreferencedMapsByImageId = Record<string, GeoreferencedMap[]>
 
 // ============================================================================
 // Map version 1

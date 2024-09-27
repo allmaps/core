@@ -1,5 +1,9 @@
 import { setContext, getContext } from 'svelte'
 
+import { fromDbMap } from '$lib/shared/maps.js'
+
+import type { GeoreferencedMapsByImageId } from '$lib/shared/types.js'
+
 import type { MapsState } from '$lib/state/maps.svelte.js'
 import type { ApiState } from '$lib/state/api.svelte.js'
 import type { MapsHistoryState } from '$lib/state/maps-history.svelte.js'
@@ -10,6 +14,22 @@ export class MapsMergedState {
   #apiState: ApiState
   #mapsHistoryState: MapsHistoryState
   #mapsState: MapsState
+
+  #mapsByImageId = $derived.by<GeoreferencedMapsByImageId>(() => {
+    const activeImageMapsByImageId: GeoreferencedMapsByImageId = {}
+
+    if (this.#mapsState.connectedImageId && this.#mapsState.maps) {
+      const activeImageMaps = Object.values(this.#mapsState.maps).map(fromDbMap)
+      activeImageMapsByImageId[this.#mapsState.connectedImageId] =
+        activeImageMaps
+    }
+
+    return {
+      ...this.#apiState.mapsByImageId,
+      ...Object.fromEntries(this.#mapsHistoryState.mapsByImageId.entries()),
+      ...activeImageMapsByImageId
+    }
+  })
 
   constructor(
     mapsState: MapsState,
@@ -22,12 +42,11 @@ export class MapsMergedState {
   }
 
   get mapsByImageId() {
-    return {
-      // TODO: add maps from:
-      // - mapsState
-      // - mapsHistoryState
-      ...this.#apiState.mapsByImageId
-    }
+    return this.#mapsByImageId
+  }
+
+  get fetched() {
+    return this.#apiState.fetched
   }
 }
 

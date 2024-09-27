@@ -18,18 +18,16 @@
   const mapsForImageId = $derived(mapsMergedState.mapsByImageId[imageId])
 
   const mapsCounted = $derived.by(() => {
-    if (!mapsForImageId) {
-      return
-    }
-
     let complete = 0
     let incomplete = 0
 
-    for (const map of mapsForImageId) {
-      if (isComplete(map)) {
-        complete++
-      } else {
-        incomplete++
+    if (mapsForImageId) {
+      for (const map of mapsForImageId) {
+        if (isComplete(map)) {
+          complete++
+        } else {
+          incomplete++
+        }
       }
     }
 
@@ -41,7 +39,7 @@
   }
 </script>
 
-{#if mapsCounted}
+{#if mapsMergedState.fetched}
   <div class="flex items-center flex-row gap-2" transition:fade>
     {#if mapsCounted.complete > 0}
       <div

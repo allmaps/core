@@ -13,15 +13,14 @@
   import IIIFInfo, { type ImageInformationResponse } from 'ol/format/IIIFInfo'
   import { fromLonLat, toLonLat } from 'ol/proj'
 
-  import { generateId, generateRandomId } from '@allmaps/id'
-  import { fetchImageInfo } from '@allmaps/stdlib'
+  import { generateRandomId } from '@allmaps/id'
 
   import { getSourceState } from '$lib/state/source.svelte.js'
   import { getMapsState } from '$lib/state/maps.svelte.js'
   import { getUiState } from '$lib/state/ui.svelte.js'
+  import { getImageInfoState } from '$lib/state/image-info.svelte.js'
 
   import {
-    resourceMaskToPolygon,
     resourceMaskStyle,
     gcpStyle,
     deleteCondition,
@@ -41,13 +40,11 @@
   import type { ModifyEvent } from 'ol/interaction/Modify'
 
   import type {
-    DbImageService,
     DbMaps,
     DbMap,
     DbGcp,
     DbGcp2,
     Point,
-    ResourceMask,
     InsertMapEvent,
     RemoveMapEvent,
     InsertGcpEvent,
@@ -78,12 +75,13 @@
   let geoDraw: Draw
   let geoModify: Modify
 
-  let isInitialized = $state(false)
+  let currentImageId = $state<string | undefined>(undefined)
   let currentActiveMapId: string | undefined
 
   const sourceState = getSourceState()
   const mapsState = getMapsState()
   const uiState = getUiState()
+  const imageInfoState = getImageInfoState()
 
   function getFirstGcpWithMissingResourcePoint(incompleteGcps: DbGcp2[]) {
     // TODO: take order into account, by index or by date
@@ -161,7 +159,7 @@
     geoGcpVectorSource.clear()
 
     if (imageId) {
-      const imageInfo = (await fetchImageInfo(
+      const imageInfo = (await imageInfoState.fetchImageInfo(
         imageId
       )) as ImageInformationResponse
 
@@ -247,7 +245,7 @@
       Object.values(maps).forEach(addMap)
     }
 
-    isInitialized = true
+    currentImageId = mapsState.connectedImageId
   }
 
   function addMap(map: DbMap) {
@@ -622,7 +620,11 @@
     })
 
     $effect(() => {
-      if (mapsState.connected === true && mapsState.maps && !isInitialized) {
+      if (
+        mapsState.connected === true &&
+        mapsState.maps &&
+        mapsState.connectedImageId !== currentImageId
+      ) {
         initializeMaps(mapsState.maps)
       }
     })
