@@ -65,6 +65,7 @@
   <button
     class="w-9 h-9 p-1.5 text-sm bg-white border border-gray-200 rounded-l-lg md:rounded-none hover:bg-gray-100 focus:z-10 focus:ring focus:ring-pink-500"
     on:click={prevMap}
+    aria-label="Previous map"
   >
     <svg
       aria-hidden="true"
@@ -83,6 +84,7 @@
   <button
     class="w-9 h-9 p-1.5 text-sm bg-white border border-gray-200 rounded-r-lg hover:bg-gray-100focus:z-10 focus:ring focus:ring-pink-500"
     on:click={nextMap}
+    aria-label="Next map"
   >
     <svg
       aria-hidden="true"

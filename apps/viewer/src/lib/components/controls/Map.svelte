@@ -139,7 +139,7 @@
     bind:this={container}
     class="inline-flex rounded-md shadow-sm"
     role="group"
-  />
+  ></div>
   {#if experimentalFeatures}
     <Transformation />
   {/if}

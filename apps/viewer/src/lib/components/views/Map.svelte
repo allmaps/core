@@ -106,7 +106,7 @@
   })
 </script>
 
-<div id="ol" bind:this={ol} class="w-full h-full" />
+<div id="ol" bind:this={ol} class="w-full h-full"></div>
 {#if featureContextMenu}
   <MapContextMenu {featureContextMenu} />
 {/if}

@@ -42,7 +42,7 @@
           </div>
         {/if}
       </div>
-      <div />
+      <div></div>
       <div class="justify-self-end">
         <div class="pointer-events-auto inline">
           <ViewControl />

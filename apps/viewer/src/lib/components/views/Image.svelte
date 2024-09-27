@@ -85,4 +85,4 @@
   })
 </script>
 
-<div id="ol" class="w-full h-full" />
+<div id="ol" class="w-full h-full"></div>
