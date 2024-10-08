@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { slide } from 'svelte/transition'
+  import { fade } from 'svelte/transition'
 
   import OLMap from 'ol/Map'
   import Feature from 'ol/Feature'
@@ -11,6 +11,8 @@
   import { Vector as VectorSource } from 'ol/source'
   import IIIF from 'ol/source/IIIF'
   import IIIFInfo, { type ImageInformationResponse } from 'ol/format/IIIFInfo'
+
+  import { X as XIcon, Check as CheckIcon } from 'phosphor-svelte'
 
   import { generateId, generateRandomId } from '@allmaps/id'
 
@@ -30,6 +32,7 @@
   import { MapsEvents } from '$lib/shared/maps-events.js'
 
   import type { VectorSourceEvent } from 'ol/source/Vector'
+  import type { DrawEvent } from 'ol/interaction/Draw'
   import type { ModifyEvent } from 'ol/interaction/Modify'
 
   import type {
@@ -53,6 +56,8 @@
 
   let currentImageId = $state<string | undefined>(undefined)
   let isDrawing = $state(false)
+  let canFinishDrawing = $state(false)
+  let drawingFeature = $state<Feature<Polygon> | undefined>(undefined)
 
   let resourceMaskBeforeModify: ResourceMask | undefined
 
@@ -60,12 +65,22 @@
   const mapsState = getMapsState()
   const imageInfoState = getImageInfoState()
 
-  function handleDrawStart() {
+  function handleDrawStart(event: DrawEvent) {
     isDrawing = true
+    drawingFeature = event.feature as Feature<Polygon>
+    drawingFeature.on('change', handleDrawingFeatureGeometryChange)
+  }
+
+  function handleDrawingFeatureGeometryChange() {
+    const geom = drawingFeature?.getGeometry()
+    const coordinates = geom?.getCoordinates()[0] || []
+    canFinishDrawing = coordinates.length > 4
   }
 
   function handleDrawEnd() {
     isDrawing = false
+    drawingFeature = undefined
+    canFinishDrawing = false
   }
 
   async function handleAddFeature(event: VectorSourceEvent) {
@@ -319,6 +334,12 @@
     resourceDraw?.abortDrawing()
   }
 
+  function finishDrawing() {
+    if (canFinishDrawing) {
+      resourceDraw?.finishDrawing()
+    }
+  }
+
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Escape') {
       abortDrawing()
@@ -433,14 +454,24 @@
 <div bind:this={resourceOlMapTarget} class="w-full h-full">
   {#if isDrawing}
     <div
-      transition:slide={{ duration: 250, axis: 'y' }}
-      class="absolute top-16 w-full flex justify-center"
+      transition:fade={{ duration: 50 }}
+      class="absolute top-16 w-full flex justify-center gap-2"
     >
       <button
         onclick={abortDrawing}
-        class="bg-white z-50 p-2 rounded-md text-sm"
+        class="bg-red z-50 p-2 rounded-md text-sm flex items-center gap-1"
       >
-        Cancel new mask
+        <XIcon class="size-4" weight="bold" />
+        <span>Cancel</span>
+      </button>
+
+      <button
+        onclick={finishDrawing}
+        disabled={!canFinishDrawing}
+        class="bg-green z-50 p-2 rounded-md text-sm flex items-center gap-1 transition-opacity disabled:opacity-50"
+      >
+        <CheckIcon class="size-4" weight="bold" />
+        <span>Finish</span>
       </button>
     </div>
   {/if}

@@ -14,6 +14,7 @@
   import { fromLonLat, toLonLat } from 'ol/proj'
 
   import { generateRandomId } from '@allmaps/id'
+  import { WarpedMapLayer } from '@allmaps/openlayers'
 
   import { getSourceState } from '$lib/state/source.svelte.js'
   import { getMapsState } from '$lib/state/maps.svelte.js'
@@ -69,6 +70,7 @@
   let resourceModify: Modify
 
   let geoTileLayer: TileLayer<XYZ>
+  let warpedMapLayer: WarpedMapLayer
   let geoGcpVectorSource: VectorSource<Feature<OLPoint>>
   let geoMaskVectorSource: VectorSource<Feature<Polygon>>
 
@@ -157,6 +159,9 @@
   async function updateImage(imageId: string | undefined) {
     resourceGcpVectorSource.clear()
     geoGcpVectorSource.clear()
+
+    resourceMaskVectorSource.clear()
+    geoMaskVectorSource.clear()
 
     if (imageId) {
       const imageInfo = (await imageInfoState.fetchImageInfo(
@@ -570,6 +575,8 @@
       source: geoTileSource
     })
 
+    warpedMapLayer = new WarpedMapLayer()
+
     geoGcpVectorSource = new VectorSource()
 
     const geoVectorLayer = new VectorLayer({
@@ -585,7 +592,13 @@
     })
 
     geoOlMap = new OLMap({
-      layers: [geoTileLayer, geoResourceMaskLayer, geoVectorLayer],
+      layers: [
+        geoTileLayer,
+        // @ts-expect-error @allmaps/openlayers does not yet include types for multiple OpenLayers version
+        warpedMapLayer,
+        geoResourceMaskLayer,
+        geoVectorLayer
+      ],
       target: geoOlMapTarget,
       view: new View({
         center: fromLonLat([0, 0]),
@@ -646,9 +659,24 @@
     })
 
     $effect(() => {
-      if (uiState.presetBaseMap) {
-        geoTileSource.setUrl(uiState.presetBaseMap.url)
-        geoTileSource.setAttributions(uiState.presetBaseMap.attribution)
+      warpedMapLayer.clear()
+      if (uiState.userGeoreferenceAnnotationUrl) {
+        warpedMapLayer.addGeoreferenceAnnotationByUrl(
+          uiState.userGeoreferenceAnnotationUrl
+        )
+      }
+    })
+
+    $effect(() => {
+      if (uiState.userBaseMapUrl || uiState.presetBaseMap) {
+        geoTileSource.setUrl(
+          uiState.userBaseMapUrl || uiState.presetBaseMap.url
+        )
+        if (uiState.presetBaseMap) {
+          geoTileSource.setAttributions(uiState.presetBaseMap.attribution)
+        } else {
+          geoTileSource.setAttributions(undefined)
+        }
       }
     })
 

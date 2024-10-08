@@ -3,7 +3,7 @@
 
   import {
     Info as InfoIcon,
-    ListBullets as ListBulletsIcon,
+    MapTrifold as MapTrifoldIcon,
     Code as CodeIcon,
     Export as ExportIcon,
     Gear as GearIcon
@@ -33,30 +33,34 @@
     | 'settings'
     | undefined = $state()
 
-  const Drawer = $derived(value && drawers[value])
+  const Contents = $derived(value && drawers[value])
 </script>
 
 <div
-  class="max-w-screen-sm bg-white rounded-md p-2 gap-2 flex flex-col min-w-0"
+  class="shrink max-w-screen-sm max-h-full bg-white rounded-md p-2 gap-2 flex flex-col min-w-0"
 >
   {#if value}
-    <div class="rounded-md shadow-inner overflow-hidden">
-      <Drawer />
+    <div
+      class="rounded-md overflow-auto transition-all flex flex-col gap-2 min-h-0 shrink"
+    >
+      <Contents />
     </div>
   {/if}
 
-  <div class="flex gap-2 items-center justify-end">
+  <div class="flex gap-2 items-center justify-end shrink-0">
     <ToggleGroup.Root
       bind:value
       type="single"
       class="flex gap-1 justify-end items-center min-w-0"
     >
       <ToggleGroup.Item
-        aria-label="toggle bold"
+        aria-label="info"
         value="info"
-        class="flex flex-row gap-4 items-center min-w-0"
+        class="flex flex-row gap-4 items-center min-w-0 group"
       >
-        <SourceLabel />
+        <div class="hidden lg:contents">
+          <SourceLabel />
+        </div>
         <div
           class="rounded-full p-1 transition-all border-solid border-gray/50 border-2 data-[state=on]:border-pink hover:border-pink/50 hover:bg-pink/20"
         >
@@ -64,11 +68,11 @@
         </div>
       </ToggleGroup.Item>
       <ToggleGroup.Item
-        aria-label="toggle italic"
+        aria-label="maps"
         value="maps"
         class="rounded-full p-1 transition-all border-solid border-gray/50 border-2 data-[state=on]:border-pink hover:border-pink/50 hover:bg-pink/20"
       >
-        <ListBulletsIcon size={24} class="block" weight="bold" />
+        <MapTrifoldIcon size={24} class="block" weight="bold" />
       </ToggleGroup.Item>
       <ToggleGroup.Item
         aria-label="show Georeference Annotation"
@@ -87,7 +91,7 @@
         <ExportIcon size={24} class="block" weight="bold" />
       </ToggleGroup.Item>
       <ToggleGroup.Item
-        aria-label="toggle strikethrough"
+        aria-label="settings"
         value="settings"
         class="rounded-full p-1 transition-all border-solid border-gray/50 border-2 data-[state=on]:border-pink hover:border-pink/50 hover:bg-pink/20"
       >

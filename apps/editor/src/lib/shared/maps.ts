@@ -150,7 +150,7 @@ export function fromDbMap(dbMap: DbMap): GeoreferencedMap {
   return {
     '@context': 'https://schemas.allmaps.org/map/2/context.json',
     type: 'GeoreferencedMap',
-    id: dbMap2.id,
+    id: `https://annotations.allmaps.org/maps/${dbMap2.id}`,
     resource: {
       ...dbMap2.resource,
       id: dbMap2.resource.uri || dbMap2.resource.id

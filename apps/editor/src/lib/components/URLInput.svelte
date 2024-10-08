@@ -1,10 +1,7 @@
 <script lang="ts">
   import { UrlState } from '$lib/state/url.svelte.js'
 
-  import type { Snippet } from 'svelte'
-
   type Props = {
-    children?: Snippet
     urlState: UrlState
     onSubmit: (url: string) => void
     autofocus?: boolean
@@ -12,7 +9,6 @@
   }
 
   let {
-    children,
     urlState,
     onSubmit,
     autofocus = false,
@@ -53,7 +49,4 @@
     class="bg-transparent w-full rounded-lg px-2 py-1 focus:outline-none truncate"
     {placeholder}
   />
-  <div class="shrink-0">
-    {@render children?.()}
-  </div>
 </form>

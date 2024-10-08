@@ -18,6 +18,7 @@
     { "path": "../../packages/iiif-parser" },
     { "path": "../../packages/stdlib" },
     { "path": "../../packages/transform" },
-    { "path": "../../packages/tailwind" }
+    { "path": "../../packages/tailwind" },
+    { "path": "../../packages/openlayers" }
   ]
 }

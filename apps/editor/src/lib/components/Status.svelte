@@ -43,7 +43,7 @@
   <div class="flex items-center flex-row gap-2" transition:fade>
     {#if mapsCounted.complete > 0}
       <div
-        class="bg-green rounded-full px-2 py-0.5 drop-shadow-md text-sm font-bold flex items-center flex-row gap-2"
+        class="bg-green rounded-full px-2 py-0.5 drop-shadow-md text-xs font-bold flex items-center flex-row gap-2"
       >
         <span>{mapsCounted.complete}</span>
         <MapTrifoldIcon class="size-4" weight="bold" />

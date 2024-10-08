@@ -5,9 +5,10 @@
 
   import { getResourceMask } from '$lib/shared/maps.js'
   import { getMaskDimensions, getMaskExtent } from '$lib/shared/geometry.js'
-  import { roundWithDecimals } from '$lib/shared/math.js'
 
   import { getMapsState } from '$lib/state/maps.svelte.js'
+
+  import StartGeoreferencing from '$lib/components/StartGeoreferencing.svelte'
 
   import type { DbMap } from '$lib/shared/types.js'
 
@@ -46,11 +47,11 @@
   }
 
   function formatResourceCoordinate(coordinate: number) {
-    return roundWithDecimals(coordinate, 0)
+    return coordinate.toFixed(0)
   }
 
   function formatGeoCoordinate(coordinate: number) {
-    return roundWithDecimals(coordinate, 5)
+    return coordinate.toFixed(5)
   }
 
   function handleMapClick(mapId: string) {
@@ -64,18 +65,21 @@
 </script>
 
 {#if mapCount === 0}
-  <div>Start by georeference this image</div>
+  <StartGeoreferencing />
 {:else}
-  <ol class="space-y-2">
+  <ol class="maps grid auto-rows-auto gap-2">
     {#each Object.values(mapsState.maps || {}) as map, index}
       {@const gcpCount = Object.values(map.gcps).length}
       {@const isActiveMap = mapsState.activeMapId === map.id}
-      <li class="space-y-2" transition:slide={{ duration: 250, axis: 'y' }}>
-        <div class="flex justify-between">
-          <button
-            class="group flex items-center gap-4"
-            onclick={() => handleMapClick(map.id)}
-          >
+      <li
+        class="col-span-6 grid grid-cols-subgrid"
+        transition:slide={{ duration: 250, axis: 'y' }}
+      >
+        <button
+          class="col-span-5 grid grid-cols-subgrid group"
+          onclick={() => handleMapClick(map.id)}
+        >
+          <div>
             {#if hasResourceMask(map)}
               <div class="size-16 relative">
                 <svg
@@ -92,67 +96,79 @@
                 </svg>
               </div>
             {/if}
+          </div>
+          <div
+            class="col-span-4 place-self-start self-center flex gap-3 items-center"
+          >
             <span>Map {index + 1}</span>
             <span class="font-light text-sm text-black/75"
               >{gcpCount} {gcpCount === 1 ? 'GCP' : 'GCPs'}
             </span>
-          </button>
-          <button onclick={() => mapsState.removeMap({ mapId: map.id })}>
-            <TrashIcon />
-          </button>
-        </div>
+          </div>
+        </button>
+        <button
+          class="place-self-end self-center"
+          onclick={() => mapsState.removeMap({ mapId: map.id })}
+        >
+          <TrashIcon />
+        </button>
+
         {#if isActiveMap && gcpCount > 0}
-          <ol class="pl-8" transition:slide={{ duration: 250, axis: 'y' }}>
+          <ol
+            class="col-span-6 grid grid-cols-subgrid"
+            transition:slide={{ duration: 250, axis: 'y' }}
+          >
             {#each Object.values(map.gcps) as gcp, index}
               {@const isActiveGcp = mapsState.activeGcpId === gcp.id}
-              <li>
-                <div class="flex justify-between gap-2">
-                  <button
-                    class="flex items-center gap-6"
-                    onclick={() => handleGcpClick(map.id, gcp.id)}
-                  >
-                    <div class="inline-block pb-2">
-                      <div
-                        class="inline-flex size-4 justify-center items-center"
-                      >
-                        <span
-                          class="size-4 rounded-full bg-pink transition-all"
-                          class:size-3={!isActiveGcp}
-                          class:size-4={isActiveGcp}
-                        ></span>
-                      </div>
-                      <span class="relative top-2">
-                        {index + 1}
-                      </span>
+              <li class="contents">
+                <button
+                  class="col-span-5 grid gap-3 grid-cols-subgrid"
+                  onclick={() => handleGcpClick(map.id, gcp.id)}
+                >
+                  <div class="inline-block">
+                    <div class="inline-flex size-4 justify-center items-center">
+                      <span
+                        class="size-3 rounded-full bg-pink transition-all"
+                        class:size-3={!isActiveGcp}
+                        class:size-4={isActiveGcp}
+                      ></span>
                     </div>
+                    <span class="relative top-2 text-sm">
+                      {index + 1}
+                    </span>
+                  </div>
 
-                    <span
-                      class="grid grid-row grid-cols-4 font-mono text-sm gap-2"
-                    >
+                  <div class="contents geograph-tnum">
+                    <span>
                       {#if gcp.resource}
-                        <span>{formatResourceCoordinate(gcp.resource[0])}</span>
-                        <span>{formatResourceCoordinate(gcp.resource[1])}</span>
-                      {:else}
-                        <span></span>
-                        <span></span>
-                      {/if}
-
-                      {#if gcp.geo}
-                        <span>{formatGeoCoordinate(gcp.geo[0])}</span>
-                        <span>{formatGeoCoordinate(gcp.geo[1])}</span>
-                      {:else}
-                        <span></span>
-                        <span></span>
+                        <span class="text-gray-300">(</span>
+                        {formatResourceCoordinate(gcp.resource[0])}
+                        <span class="text-gray-300">,</span>
+                        {formatResourceCoordinate(gcp.resource[1])}
+                        <span class="text-gray-300">)</span>
                       {/if}
                     </span>
-                  </button>
-                  <button
-                    onclick={() =>
-                      mapsState.removeGcp({ mapId: map.id, gcpId: gcp.id })}
-                  >
-                    <TrashIcon />
-                  </button>
-                </div>
+
+                    <span class="text-gray-300">⇒</span>
+
+                    <div>
+                      {#if gcp.geo}
+                        <span class="text-gray-300">(</span>
+                        {formatGeoCoordinate(gcp.geo[0])}
+                        <span class="text-gray-300">,</span>
+                        {formatGeoCoordinate(gcp.geo[1])}
+                        <span class="text-gray-300">)</span>
+                      {/if}
+                    </div>
+                  </div>
+                </button>
+                <button
+                  class="place-self-end self-center"
+                  onclick={() =>
+                    mapsState.removeGcp({ mapId: map.id, gcpId: gcp.id })}
+                >
+                  <TrashIcon />
+                </button>
               </li>
             {/each}
           </ol>
@@ -161,3 +177,9 @@
     {/each}
   </ol>
 {/if}
+
+<style scoped>
+  .maps {
+    grid-template-columns: repeat(5, max-content) 1fr;
+  }
+</style>

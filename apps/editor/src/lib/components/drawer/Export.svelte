@@ -39,25 +39,29 @@
 
 {#if type && allmapsId}
   <div>
-    <div>
-      <a class="underline" href={getAnnotationUrl(type, allmapsId)}
-        >Georeference Annotation</a
-      >
-    </div>
-    <div>
-      <a class="underline" href={getViewerUrl(type, allmapsId)}
-        >Allmaps Viewer</a
-      >
-    </div>
-    <div>
-      <a class="underline" href={getGeoJsonUrl(type, allmapsId)}>GeoJSON</a>
-    </div>
-    <div>
-      <a class="underline" href={getXyzTilesUrl(type, allmapsId)}
-        >XYZ map tiles</a
-      >
-    </div>
-    <!-- <div>GeoTIFF</div> -->
+    <a
+      class="inline-block p-2 rounded-md text-white bg-pink hover:bg-pink-400 transition-colors"
+      href={getViewerUrl(type, allmapsId)}>View in Allmaps Viewer</a
+    >
+  </div>
+
+  <div>URLs:</div>
+
+  <div class="grid grid-cols-[max-content,1fr] gap-2 [&>*]:break-all">
+    <div>Georeference Annotation:</div>
+    <a class="underline" href={getAnnotationUrl(type, allmapsId)}
+      >{getAnnotationUrl(type, allmapsId)}</a
+    >
+    <div>GeoJSON:</div>
+    <a class="underline" href={getGeoJsonUrl(type, allmapsId)}
+      >{getGeoJsonUrl(type, allmapsId)}</a
+    >
+    <div>XYZ map tiles:</div>
+    <a class="underline" href={getXyzTilesUrl(type, allmapsId)}
+      >{getXyzTilesUrl(type, allmapsId)}</a
+    >
+    <!-- TODO: add GeoTIFF script -->
+    <!-- TODO: add code for OpenLayers/Leaflet/MapLibre plugins -->
   </div>
 {/if}
 <Scope />

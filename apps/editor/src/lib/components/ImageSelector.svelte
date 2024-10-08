@@ -33,12 +33,12 @@
 </script>
 
 {#if sourceState.activeImageIndex !== undefined}
-  <div class="bg-white rounded-md p-2 flex gap-2 items-center">
-    <button onclick={handlePreviousClick}>
+  <div class="flex bg-white rounded-md p-1 gap-1 sm:p-2 sm:gap-2 items-center">
+    <button onclick={handlePreviousClick} title="Previous image">
       <CaretLeftIcon class="size-6" />
     </button>
 
-    <div>
+    <div class="hidden sm:inline-block whitespace-nowrap">
       <span class="hidden md:inline-block">Image&nbsp;</span
       >{sourceState.activeImageIndex + 1} / {sourceState.imageCount}
     </div>
@@ -48,7 +48,7 @@
       >
     {/if}
 
-    <button onclick={handleNextClick}>
+    <button onclick={handleNextClick} title="Next image">
       <CaretRightIcon class="size-6" />
     </button>
   </div>

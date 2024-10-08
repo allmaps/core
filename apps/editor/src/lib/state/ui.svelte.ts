@@ -42,6 +42,30 @@ export class UiState {
   #userBaseMapUrl = $state<string | undefined>()
   #userGeoreferenceAnnotationUrl = $state<string | undefined>()
 
+  #firstUse = $state(true)
+  #showAboutDialog = $state(false)
+
+  constructor() {
+    // TODO: move localStorage code to shared ts file
+    const firstUseKey = `${String(UI_KEY)}-first-use`
+
+    try {
+      const firstUse = localStorage.getItem(firstUseKey)
+
+      if (firstUse) {
+        this.#firstUse = false
+      }
+
+      localStorage.setItem(firstUseKey, String(false))
+    } catch {
+      console.warn('Error reading from localStorage')
+    }
+
+    if (this.#firstUse) {
+      this.#showAboutDialog = true
+    }
+  }
+
   get presetBaseMaps() {
     return this.#presetBaseMaps
   }
@@ -80,6 +104,18 @@ export class UiState {
 
   set userGeoreferenceAnnotationUrl(url: string) {
     this.#userGeoreferenceAnnotationUrl = url
+  }
+
+  get firstUse() {
+    return this.#firstUse
+  }
+
+  get showAboutDialog() {
+    return this.#showAboutDialog
+  }
+
+  set showAboutDialog(show: boolean) {
+    this.#showAboutDialog = show
   }
 }
 

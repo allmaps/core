@@ -45,6 +45,10 @@ export class MapsMergedState {
     return this.#mapsByImageId
   }
 
+  get maps() {
+    return Object.values(this.#mapsByImageId).flat()
+  }
+
   get fetched() {
     return this.#apiState.fetched
   }
