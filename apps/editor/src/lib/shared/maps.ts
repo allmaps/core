@@ -21,6 +21,8 @@ import type {
   GCP
 } from '$lib/shared/types.js'
 
+import { PUBLIC_ALLMAPS_ANNOTATIONS_API_URL } from '$env/static/public'
+
 export function isDbMap1(dbMap: DbMap): dbMap is DbMap1 {
   return dbMap.version === 1
 }
@@ -150,7 +152,7 @@ export function fromDbMap(dbMap: DbMap): GeoreferencedMap {
   return {
     '@context': 'https://schemas.allmaps.org/map/2/context.json',
     type: 'GeoreferencedMap',
-    id: `https://annotations.allmaps.org/maps/${dbMap2.id}`,
+    id: `${PUBLIC_ALLMAPS_ANNOTATIONS_API_URL}/maps/${dbMap2.id}`,
     resource: {
       ...dbMap2.resource,
       id: dbMap2.resource.uri || dbMap2.resource.id

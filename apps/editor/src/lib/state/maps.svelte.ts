@@ -36,9 +36,7 @@ import type {
   RemoveGcp
 } from '$lib/shared/types.js'
 
-// TODO: read from env
-// const API_URL = 'https://dev.api.allmaps.org'
-const WS_API_URL = 'wss://dev.api.allmaps.org'
+import { PUBLIC_ALLMAPS_API_WS_URL } from '$env/static/public'
 
 const MAPS_KEY = Symbol('maps')
 
@@ -100,7 +98,7 @@ export class MapsState extends MapsEventTarget {
 
     this.#sourceState = sourceState
 
-    this.#rws = new ReconnectingWebSocket(WS_API_URL, [], {
+    this.#rws = new ReconnectingWebSocket(PUBLIC_ALLMAPS_API_WS_URL, [], {
       maxEnqueuedMessages: 0
     })
 
