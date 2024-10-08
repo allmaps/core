@@ -2,6 +2,8 @@ import { setContext, getContext } from 'svelte'
 
 import { uniqBy } from 'lodash-es'
 
+import { PUBLIC_EXAMPLES_API_URL } from '$env/static/public'
+
 type Example = {
   title: string
   manifestId: string
@@ -25,7 +27,7 @@ export class ExamplesState {
 
   async fetchExamples() {
     const fetchedExamples = (await fetch(
-      `https://sammeltassen-allmaps.web.val.run/?count=${count}`
+      `${PUBLIC_EXAMPLES_API_URL}/?count=${count}`
     ).then((response) => response.json())) as Example[]
     this.#examples = uniqBy(fetchedExamples, (example) => example.imageId)
   }
