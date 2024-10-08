@@ -275,6 +275,11 @@
   }
 
   function removeMap(mapId: string) {
+    if (currentActiveMapId === mapId) {
+      resourceGcpVectorSource.clear()
+      geoGcpVectorSource.clear()
+    }
+
     const resourceMaskFeature = resourceMaskVectorSource.getFeatureById(mapId)
     if (resourceMaskFeature) {
       resourceMaskVectorSource.removeFeature(resourceMaskFeature)
