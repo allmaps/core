@@ -72,11 +72,11 @@
       {@const gcpCount = Object.values(map.gcps).length}
       {@const isActiveMap = mapsState.activeMapId === map.id}
       <li
-        class="col-span-6 grid grid-cols-subgrid"
+        class="col-span-9 grid grid-cols-subgrid"
         transition:slide={{ duration: 250, axis: 'y' }}
       >
         <button
-          class="col-span-5 grid grid-cols-subgrid group"
+          class="col-span-8 grid grid-cols-subgrid group"
           onclick={() => handleMapClick(map.id)}
         >
           <div>
@@ -98,7 +98,7 @@
             {/if}
           </div>
           <div
-            class="col-span-4 place-self-start self-center flex gap-3 items-center"
+            class="col-span-7 place-self-start self-center flex gap-3 items-center"
           >
             <span>Map {index + 1}</span>
             <span class="font-light text-sm text-black/75"
@@ -115,17 +115,17 @@
 
         {#if isActiveMap && gcpCount > 0}
           <ol
-            class="col-span-6 grid grid-cols-subgrid"
+            class="col-span-9 grid grid-cols-subgrid"
             transition:slide={{ duration: 250, axis: 'y' }}
           >
             {#each Object.values(map.gcps) as gcp, index}
               {@const isActiveGcp = mapsState.activeGcpId === gcp.id}
               <li class="contents">
                 <button
-                  class="col-span-5 grid gap-3 grid-cols-subgrid"
+                  class="col-span-8 grid gap-0 grid-cols-subgrid"
                   onclick={() => handleGcpClick(map.id, gcp.id)}
                 >
-                  <div class="inline-block">
+                  <div class="inline-block h-8">
                     <div class="inline-flex size-4 justify-center items-center">
                       <span
                         class="size-3 rounded-full bg-pink transition-all"
@@ -138,28 +138,39 @@
                     </span>
                   </div>
 
-                  <div class="contents geograph-tnum">
-                    <span>
-                      {#if gcp.resource}
-                        <span class="text-gray-300">(</span>
-                        {formatResourceCoordinate(gcp.resource[0])}
-                        <span class="text-gray-300">,</span>
-                        {formatResourceCoordinate(gcp.resource[1])}
-                        <span class="text-gray-300">)</span>
-                      {/if}
-                    </span>
-
-                    <span class="text-gray-300">⇒</span>
-
-                    <div>
-                      {#if gcp.geo}
-                        <span class="text-gray-300">(</span>
-                        {formatGeoCoordinate(gcp.geo[0])}
-                        <span class="text-gray-300">,</span>
-                        {formatGeoCoordinate(gcp.geo[1])}
-                        <span class="text-gray-300">)</span>
-                      {/if}
-                    </div>
+                  <div
+                    class="col-span-7 grid gap-1 grid-cols-subgrid geograph-tnum place-items-end"
+                  >
+                    {#if gcp.resource}
+                      <span inert class="text-gray-300">(</span><span
+                        >{formatResourceCoordinate(gcp.resource[0])}<span
+                          inert
+                          class="text-gray-300">,</span
+                        ></span
+                      ><span class="space-x-1">
+                        <span>{formatResourceCoordinate(gcp.resource[1])}</span
+                        ><span inert class="text-gray-300">)</span></span
+                      >
+                    {:else}
+                      <span class="col-span-3"></span>
+                    {/if}
+                    <span inert class="text-gray-300">⇒</span>
+                    {#if gcp.geo}
+                      <span inert class="text-gray-300">(</span><span
+                        >{formatGeoCoordinate(gcp.geo[0])}<span
+                          inert
+                          class="text-gray-300">,</span
+                        ></span
+                      >
+                      <span class="space-x-1">
+                        <span>{formatGeoCoordinate(gcp.geo[1])}</span><span
+                          inert
+                          class="text-gray-300">)</span
+                        ></span
+                      >
+                    {:else}
+                      <span class="col-span-3"></span>
+                    {/if}
                   </div>
                 </button>
                 <button
@@ -180,6 +191,6 @@
 
 <style scoped>
   .maps {
-    grid-template-columns: repeat(5, max-content) 1fr;
+    grid-template-columns: repeat(8, max-content) 1fr;
   }
 </style>
