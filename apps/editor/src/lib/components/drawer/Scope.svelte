@@ -18,7 +18,7 @@
     bind:value={scopeState.scope}
     class="flex h-input justify-end items-center gap-1 rounded-sm "
   >
-    {#if scopeState.hasImageScope}
+    {#if scopeState.hasImagesScope}
       <RadioGroup.Item
         id="images"
         value="images"
