@@ -18,20 +18,21 @@
     bind:value={scopeState.scope}
     class="flex h-input justify-end items-center gap-1 rounded-sm "
   >
-    <RadioGroup.Item
-      id="images"
-      value="images"
-      class="data-[state=checked]:bg-gray-100 hover:bg-gray-100 transition-all rounded-md"
-    >
-      <Label.Root
-        for="images"
-        class="cursor-pointer inline-flex gap-2 items-center px-2 py-1 justify-center"
-        ><ImagesIcon class="size-6" /><span class="hidden sm:inline-block"
-          >All images</span
-        ></Label.Root
-      ></RadioGroup.Item
-    >
-
+    {#if scopeState.hasImageScope}
+      <RadioGroup.Item
+        id="images"
+        value="images"
+        class="data-[state=checked]:bg-gray-100 hover:bg-gray-100 transition-all rounded-md"
+      >
+        <Label.Root
+          for="images"
+          class="cursor-pointer inline-flex gap-2 items-center px-2 py-1 justify-center"
+          ><ImagesIcon class="size-6" /><span class="hidden sm:inline-block"
+            >All images</span
+          ></Label.Root
+        ></RadioGroup.Item
+      >
+    {/if}
     <RadioGroup.Item
       id="image"
       value="image"

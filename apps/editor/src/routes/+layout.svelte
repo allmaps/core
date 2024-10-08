@@ -48,7 +48,7 @@
   const mapsHistoryState = setMapsHistoryState(mapsState)
   setMapsMergedState(mapsState, mapsHistoryState, apiState)
 
-  setScopeState()
+  setScopeState(sourceState)
 
   function handleInputSubmit(url: string) {
     gotoRoute(createRouteUrl($page, getRouteId($page), { url }))
