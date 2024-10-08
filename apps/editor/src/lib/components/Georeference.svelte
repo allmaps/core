@@ -242,15 +242,13 @@
     }
   }
 
-  function initializeMaps(maps: DbMaps) {
+  function initializeMasks(maps: DbMaps) {
     resourceMaskVectorSource.clear()
     geoMaskVectorSource.clear()
 
     if (maps) {
       Object.values(maps).forEach(addMap)
     }
-
-    currentImageId = mapsState.connectedImageId
   }
 
   function addMap(map: DbMap) {
@@ -477,6 +475,8 @@
         }
       }
 
+      currentActiveMapId = map.id
+
       mapsState.insertMap({
         mapId: map.id,
         map
@@ -643,7 +643,9 @@
         mapsState.maps &&
         mapsState.connectedImageId !== currentImageId
       ) {
-        initializeMaps(mapsState.maps)
+        initializeMasks(mapsState.maps)
+
+        currentImageId = mapsState.connectedImageId
       }
     })
 

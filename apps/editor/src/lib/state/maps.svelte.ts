@@ -377,8 +377,8 @@ export class MapsState extends MapsEventTarget {
   }
 
   insertMap({ mapId, map }: InsertMap) {
-    this.activeMapId = mapId
     this.#doc.submitOp(insertOp([mapId], structuredClone(map)))
+    this.activeMapId = mapId
   }
 
   removeMap({ mapId }: RemoveMap) {
@@ -386,35 +386,35 @@ export class MapsState extends MapsEventTarget {
   }
 
   insertResourceMaskPoint({ mapId, index, point }: ReplaceResourceMaskPoint) {
-    this.activeMapId = mapId
     this.#doc.submitOp(insertOp([mapId, 'resourceMask', index], point))
+    this.activeMapId = mapId
   }
 
   replaceResourceMaskPoint({ mapId, index, point }: ReplaceResourceMaskPoint) {
-    this.activeMapId = mapId
     this.#doc.submitOp(replaceOp([mapId, 'resourceMask', index], true, point))
+    this.activeMapId = mapId
   }
 
   removeResourceMaskPoint({ mapId, index }: RemoveResourceMaskPoint) {
-    this.activeMapId = mapId
     this.#doc.submitOp(removeOp([mapId, 'resourceMask', index], false))
+    this.activeMapId = mapId
   }
 
   insertGcp({ mapId, gcpId, gcp }: InsertGcp) {
+    this.#doc.submitOp(insertOp([mapId, 'gcps', gcpId], gcp))
     this.activeMapId = mapId
     this.activeGcpId = gcpId
-    this.#doc.submitOp(insertOp([mapId, 'gcps', gcpId], gcp))
   }
 
   replaceGcp({ mapId, gcpId, gcp }: ReplaceGcp) {
+    this.#doc.submitOp(replaceOp([mapId, 'gcps', gcpId], true, gcp))
     this.activeMapId = mapId
     this.activeGcpId = gcpId
-    this.#doc.submitOp(replaceOp([mapId, 'gcps', gcpId], true, gcp))
   }
 
   removeGcp({ mapId, gcpId }: RemoveGcp) {
-    this.activeMapId = mapId
     this.#doc.submitOp(removeOp([mapId, 'gcps', gcpId], false))
+    this.activeMapId = mapId
   }
 
   get connected() {
