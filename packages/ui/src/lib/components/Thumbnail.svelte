@@ -63,8 +63,9 @@
     {@const tilesHeight = getTilesHeight(imageRequest)}
 
     <div
-      class="relative grid h-full"
-      class:w-full={mode === 'cover'}
+      class="relative grid"
+      class:w-full={mode === 'contain'}
+      class:h-full={mode === 'cover'}
       style:grid-template-columns={getColumnPercentages(
         imageRequest,
         tilesWidth
@@ -72,10 +73,8 @@
         .map((percentage) => `${percentage}%`)
         .join(' ')}
       style:aspect-ratio="{tilesWidth} / {tilesHeight}"
-      style:left={mode === 'contain'
-        ? getLeftStyle(tilesWidth, tilesHeight)
-        : ''}
-      style:top={mode === 'cover' ? getTopStyle(tilesWidth, tilesHeight) : ''}
+      style:left={mode === 'cover' ? getLeftStyle(tilesWidth, tilesHeight) : ''}
+      style:top={mode === 'contain' ? getTopStyle(tilesWidth, tilesHeight) : ''}
     >
       {#each imageRequest as row, rowIndex}
         {#each row as tile, columnIndex}
