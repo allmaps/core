@@ -1,6 +1,10 @@
 import classifyPoint from 'robust-point-in-polygon'
 
-import { pixelToIntArrayIndex, pointToPixel } from '@allmaps/stdlib'
+import {
+  doBboxesIntersect,
+  pixelToIntArrayIndex,
+  pointToPixel
+} from '@allmaps/stdlib'
 
 import { GetImageDataValue, GetImageDataSize } from './types.js'
 import {
@@ -44,28 +48,38 @@ export async function renderToIntArray<W extends WarpedMap, D>(
   intArray: Uint8ClampedArray
 ): Promise<void> {
   for (const warpedMap of warpedMapList.getWarpedMaps()) {
-    // TODO: viewport.projectedGeoRectangleBbox not in warpedMap.projectedGeoBbox, continue
+    if (
+      !doBboxesIntersect(
+        viewport.projectedGeoRectangleBbox,
+        warpedMap.projectedGeoMaskBbox
+      )
+    ) {
+      continue
+    }
 
     const cachedTiles = tileCache.getMapCachedTiles(warpedMap.mapId)
+    const canvasToProjectedGeoTransform = invertTransform(
+      viewport.projectedGeoToCanvasTransform
+    )
 
     // Step through all viewport pixels and set their color
     // Note: naming variables 'Pixel' instead of 'Point' when we are sure they are integer coordinate values
     for (
-      let viewportPixelX = 0;
-      viewportPixelX < viewport.viewportSize[0];
-      viewportPixelX++
+      let canvasPixelX = 0;
+      canvasPixelX < viewport.canvasSize[0];
+      canvasPixelX++
     ) {
       for (
-        let viewportPixelY = 0;
-        viewportPixelY < viewport.viewportSize[1];
-        viewportPixelY++
+        let canvasPixelY = 0;
+        canvasPixelY < viewport.canvasSize[1];
+        canvasPixelY++
       ) {
-        const viewportPixel = [viewportPixelX, viewportPixelY] as Point
+        const canvasPixel = [canvasPixelX, canvasPixelY] as Point
 
-        // Get resourcePoint corresponding to this viewportPixel
+        // Get resourcePoint corresponding to this canvasPixel
         const projectedGeoPoint = applyTransform(
-          invertTransform(viewport.projectedGeoToViewportTransform),
-          viewportPixel
+          canvasToProjectedGeoTransform,
+          canvasPixel
         )
         const resourcePoint =
           warpedMap.projectedTransformer.transformToResource(projectedGeoPoint)
@@ -91,7 +105,7 @@ export async function renderToIntArray<W extends WarpedMap, D>(
           }
         }
 
-        // If tile is found, set color of this resourcePoint, i.e. viewportPixel
+        // If tile is found, set color of this resourcePoint, i.e. canvasPixel
         if (foundCachedTile && cachedTile) {
           const tile = cachedTile.tile
           const tileSize = getImageDataSize(cachedTile.data)
@@ -126,19 +140,19 @@ export async function renderToIntArray<W extends WarpedMap, D>(
           ]
 
           // Determine the index where to write this pixel's information in the IntArray
-          const viewportPixelIntArrayIndex = pixelToIntArrayIndex(
-            viewportPixel,
-            viewport.viewportSize,
+          const canvasPixelIntArrayIndex = pixelToIntArrayIndex(
+            canvasPixel,
+            viewport.canvasSize,
             CHANNELS
           )
 
           // Apply bilinear resampling:
           // for each color, set the color value in the intArray in the following way:
-          // for the current tile point (derived earlier from resourcePoint and hence from viewportPoint)
+          // for the current tile point (derived earlier from resourcePoint and hence from canvasPoint)
           // go over all tile pixels surrounding it
           // multiply their color value and pixel weight, and add all of these together
           for (let color = 0; color < CHANNELS; color++) {
-            intArray[viewportPixelIntArrayIndex + color] = tilePointPixels
+            intArray[canvasPixelIntArrayIndex + color] = tilePointPixels
               .map(
                 (tilePointPixel) =>
                   getImageDataValue(

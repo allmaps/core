@@ -9,7 +9,8 @@ import {
   fetchImageInfo,
   lonLatToWebMecator,
   getPropertyFromCacheOrComputation,
-  mixPoints
+  mixPoints,
+  sizeToRectangle
 } from '@allmaps/stdlib'
 
 import { applyTransform } from '../shared/matrix.js'
@@ -226,15 +227,10 @@ export default class WarpedMap extends EventTarget {
     this.resourceMask = this.georeferencedMap.resourceMask
     this.updateResourceMaskProperties()
 
-    this.resourceFullMask = [
-      [0, 0],
-      [this.georeferencedMap.resource.width, 0],
-      [
-        this.georeferencedMap.resource.width,
-        this.georeferencedMap.resource.height
-      ],
-      [0, this.georeferencedMap.resource.height]
-    ]
+    this.resourceFullMask = sizeToRectangle([
+      this.georeferencedMap.resource.width,
+      this.georeferencedMap.resource.height
+    ])
     this.resourceFullMaskBbox = computeBbox(this.resourceFullMask)
     this.resourceFullMaskRectangle = bboxToRectangle(this.resourceFullMaskBbox)
 

@@ -396,7 +396,7 @@ export class Image extends EmbeddedImage {
   /**
    * Returns a Image request object for the requested region and size
    * @param {SizeObject} size - Size of the requested thumbnail
-   * @param {'cover' | 'contain'} mode - Desired fit mode of the requested thumbnail
+   * @param {Fit} mode - Desired fit mode of the requested thumbnail
    * @returns {ImageRequest} Image request object that can be used to fetch the requested thumbnail
    */
   getThumbnail(

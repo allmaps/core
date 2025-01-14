@@ -1,6 +1,5 @@
 export * from './color.js'
 export * from './fetch.js'
-export * from './fit.js'
 export * from './geojson.js'
 export * from './geometry.js'
 export * from './iiif.js'

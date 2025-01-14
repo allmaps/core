@@ -55,11 +55,13 @@ export async function generateImage(
 
   await renderer.addGeoreferenceAnnotation(annotation)
 
-  const viewport = Viewport.fromWarpedMapList(
+  const viewport = Viewport.fromSizeAndMaps(
     size,
     renderer.warpedMapList,
-    1,
+    undefined,
     'contain',
+    0,
+    1,
     1.25
   )
   const image = await renderer.render(viewport)

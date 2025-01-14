@@ -12,7 +12,18 @@ import {
   bboxToSize,
   sizesToScale,
   bufferBboxByRatio,
-  webMercatorToLonLat
+  webMercatorToLonLat,
+  scaleSize,
+  rotatePoints,
+  translatePoints,
+  sizeToResolution,
+  sizeToBbox,
+  sizeToCenter,
+  scalePoint,
+  sizeToRectangle,
+  midPoint,
+  scalePoints,
+  rotatePoint
 } from '@allmaps/stdlib'
 
 import type WarpedMap from '../maps/WarpedMap.js'
@@ -23,7 +34,8 @@ import type {
   Size,
   Bbox,
   Transform,
-  Fit
+  Fit,
+  Polygon
 } from '@allmaps/types'
 
 /**
@@ -50,13 +62,14 @@ import type {
  * @property {number} viewportResolution - Resolution of the viewport in viewport pixels, as width * height.
  * @property {Bbox} viewportBbox - Bounding box of the viewport, in viewport pixels.
  * @property {number} devicePixelRatio - The devicePixelRatio of the viewport.
- * @property {Point} canvasCenter - Center point of the HTMLCanvasElement of the viewport, in canvas pixels.
- * @property {Rectangle} canvasRectangle - Rectangle of the HTMLCanvasElement of the viewport, in canvas pixels.
- * @property {Size} canvasSize - Size of the HTMLCanvasElement of the viewport in canvas pixels (viewportSize*devicePixelRatio), as [width, height].
- * @property {number} canvasResolution - Resolution of the HTMLCanvasElement of the viewport in canvas pixels (viewportSize*devicePixelRatio), as width * height.
- * @property {Bbox} canvasBbox - Bounding box of the HTMLCanvasElement of the viewport, in canvas pixels.
+ * @property {Point} canvasCenter - Center point of the canvas, in canvas pixels.
+ * @property {Rectangle} canvasRectangle - Rectangle of the canvas, in canvas pixels.
+ * @property {Size} canvasSize - Size of the canvas in canvas pixels (viewportSize*devicePixelRatio), as [width, height].
+ * @property {number} canvasResolution - Resolution of the canvas in canvas pixels (viewportSize*devicePixelRatio), as width * height.
+ * @property {Bbox} canvasBbox - Bounding box of the canvas, in canvas pixels.
  * @property {number} projectedGeoPerCanvasScale - Scale of the viewport, in projected geo coordinates per canvas pixel (projectedGeoPerViewportScale/devicePixelRatio).
  * @property {Transform} projectedGeoToViewportTransform - Transform from projected geo coordinates to viewport pixels. Equivalent to OpenLayers coordinateToPixelTransform.
+ * @property {Transform} projectedGeoToCanvasTransform - Transform from projected geo coordinates to canvas pixels.
  * @property {Transform} projectedGeoToClipTransform - Transform from projected geo coordinates to WebGL coordinates in the [-1, 1] range. Equivalent to OpenLayers projectionTransform.
  * @property {Transform} viewportToClipTransform - Transform from viewport coordinates to WebGL coordinates in the [-1, 1] range.
  */
@@ -89,6 +102,7 @@ export default class Viewport {
 
   projectedGeoPerCanvasScale: number
   projectedGeoToViewportTransform: Transform = [1, 0, 0, 1, 0, 0]
+  projectedGeoToCanvasTransform: Transform = [1, 0, 0, 1, 0, 0]
   projectedGeoToClipTransform: Transform = [1, 0, 0, 1, 0, 0]
   viewportToClipTransform: Transform = [1, 0, 0, 1, 0, 0]
 
@@ -99,35 +113,37 @@ export default class Viewport {
    * @param {Size} viewportSize - Size of the viewport in viewport pixels, as [width, height].
    * @param {Point} projectedGeoCenter - Center point of the viewport, in projected coordinates.
    * @param {number} projectedGeoPerViewportScale - Scale of the viewport, in projection coordinates per viewport pixel.
-   * @param {number} rotation - Rotation of the viewport with respect to the project coordinate system.
+   * @param {number} [rotation=0] - Rotation of the viewport with respect to the projected geo coordinate system. Positive values rotate the viewport positively (i.e. counter-clockwise) w.r.t. the map in projected geo coordinates. This is equivalent to rotating the map negatively (i.e. clockwise) within the viewport.
    * @param {number} [devicePixelRatio=1] - The devicePixelRatio of the viewport.
    */
   constructor(
     viewportSize: Size,
     projectedGeoCenter: Point,
     projectedGeoPerViewportScale: number,
-    rotation: number,
+    rotation = 0,
     devicePixelRatio = 1
   ) {
     this.projectedGeoCenter = projectedGeoCenter
     this.projectedGeoPerViewportScale = projectedGeoPerViewportScale
     this.rotation = rotation
-    this.viewportSize = viewportSize
+    this.viewportSize = [
+      Math.round(viewportSize[0]),
+      Math.round(viewportSize[1])
+    ] // Note: assure integer values for viewport size, so they can be stored in arrays
     this.devicePixelRatio = devicePixelRatio
 
     this.projectedGeoRectangle = this.computeProjectedGeoRectangle(
-      this.projectedGeoCenter,
+      this.viewportSize,
       this.projectedGeoPerViewportScale,
       this.rotation,
-      this.viewportSize
+      this.projectedGeoCenter
     )
     this.projectedGeoRectangleBbox = computeBbox(this.projectedGeoRectangle)
-    this.projectedGeoSize = [
-      this.viewportSize[0] * projectedGeoPerViewportScale,
-      this.viewportSize[1] * projectedGeoPerViewportScale
-    ]
-    this.projectedGeoResolution =
-      this.projectedGeoSize[0] * this.projectedGeoSize[1]
+    this.projectedGeoSize = scaleSize(
+      this.viewportSize,
+      projectedGeoPerViewportScale
+    )
+    this.projectedGeoResolution = sizeToResolution(this.projectedGeoSize)
 
     this.geoCenter = webMercatorToLonLat(this.projectedGeoCenter)
     // TODO: improve this with an interpolated back-projection, resulting in a ring
@@ -136,23 +152,17 @@ export default class Viewport {
     }) as Rectangle
     this.geoRectangleBbox = computeBbox(this.geoRectangle)
     this.geoSize = bboxToSize(this.geoRectangleBbox)
-    this.geoResolution = this.geoSize[0] * this.geoSize[1]
+    this.geoResolution = sizeToResolution(this.geoSize)
 
-    this.viewportResolution = this.viewportSize[0] * this.viewportSize[1]
-    this.viewportCenter = [this.viewportSize[0] / 2, this.viewportSize[1] / 2]
-    this.viewportBbox = [0, 0, ...this.viewportSize]
+    this.viewportResolution = sizeToResolution(this.viewportSize)
+    this.viewportCenter = sizeToCenter(this.viewportSize)
+    this.viewportBbox = sizeToBbox(this.viewportSize)
     this.viewportRectangle = bboxToRectangle(this.viewportBbox)
 
-    this.canvasCenter = [
-      this.viewportCenter[0] * this.devicePixelRatio,
-      this.viewportSize[1] * this.devicePixelRatio
-    ]
-    this.canvasSize = [
-      this.viewportSize[0] * this.devicePixelRatio,
-      this.viewportSize[1] * this.devicePixelRatio
-    ]
-    this.canvasResolution = this.canvasSize[0] * this.canvasSize[1]
-    this.canvasBbox = [0, 0, ...this.canvasSize]
+    this.canvasCenter = scalePoint(this.viewportCenter, this.devicePixelRatio)
+    this.canvasSize = scaleSize(this.viewportSize, this.devicePixelRatio)
+    this.canvasResolution = sizeToResolution(this.canvasSize)
+    this.canvasBbox = sizeToBbox(this.canvasSize)
     this.canvasRectangle = bboxToRectangle(this.canvasBbox)
 
     this.projectedGeoPerCanvasScale =
@@ -160,81 +170,172 @@ export default class Viewport {
 
     this.projectedGeoToViewportTransform =
       this.composeProjectedGeoToViewportTransform()
+    this.projectedGeoToCanvasTransform =
+      this.composeProjectedGeoToCanvasTransform()
     this.projectedGeoToClipTransform = this.composeProjectedGeoToClipTransform()
     this.viewportToClipTransform = this.composeViewportToClipTransform()
   }
 
   /**
-   * Static method creates that creates a Viewport from a WarpedMapList
+   * Static method that creates a Viewport from a viewport size and a WarpedMapList
    *
    * @static
    * @template {WarpedMap} W
    * @param {Size} viewportSize - Size of the viewport in viewport pixels, as [width, height].
    * @param {WarpedMapList<W>} warpedMapList - A WarpedMapList.
-   * @param {number} [devicePixelRatio] - The devicePixelRatio of the viewport.
+   * @param {string[]} [mapIds] - IDs of the maps to include. Set to 'undefined' to include all maps.
    * @param {Fit} [fit='contain'] - Whether the viewport should contain or cover the bbox of the warpedMapList.
-   * @returns {Viewport} - A new Viewport object
+   * @param {number} [rotation] - Rotation of the viewport with respect to the projected geo coordinate system. Positive values rotate the viewport positively (i.e. counter-clockwise) w.r.t. the map in projected geo coordinates. This is equivalent to rotating the map negatively (i.e. clockwise) within the viewport.
+   * @param {number} [devicePixelRatio] - The devicePixelRatio of the viewport.
+   * @param {number} [zoom] - The zoom on the viewport.
+   * @returns {Viewport} - A new Viewport object.
    */
-  static fromWarpedMapList<W extends WarpedMap>(
+  static fromSizeAndMaps<W extends WarpedMap>(
     viewportSize: Size,
     warpedMapList: WarpedMapList<W>,
-    devicePixelRatio?: number,
+    mapIds?: string[],
     fit: Fit = 'contain',
-    // TODO: instead of zoom parameter, add function to Viewport class
-    // that allows zooming in/out
-    zoom = 1
+    rotation?: number,
+    devicePixelRatio?: number,
+    zoom?: number
   ): Viewport {
-    const projectedGeoCenter = warpedMapList.getProjectedCenter()
-    const projectedGeoBbox = warpedMapList.getProjectedBbox()
+    const projectedGeoConvexHull = warpedMapList.getProjectedConvexHull(mapIds)
 
-    if (!projectedGeoCenter || !projectedGeoBbox) {
-      throw new Error('WarpedMapList has no projected center or bbox')
+    if (!projectedGeoConvexHull) {
+      throw new Error(
+        'WarpedMapList has no projected convex hull. Possibly because it is empty.'
+      )
     }
 
-    const projectedGeoSize = bboxToSize(projectedGeoBbox)
-    const projectedGeoPerViewportScale =
-      sizesToScale(projectedGeoSize, viewportSize, fit) * (1 / zoom)
+    return this.fromSizeAndPolygon(
+      viewportSize,
+      [projectedGeoConvexHull],
+      fit,
+      rotation,
+      devicePixelRatio,
+      zoom
+    )
+  }
+
+  /**
+   * Static method that creates a Viewport from a viewport size and a polygon in projected geospatial coordinates.
+   *
+   * @static
+   * @param {Size} viewportSize - Size of the viewport in viewport pixels, as [width, height].
+   * @param {Polygon} projectedGeoPolygon - A polygon in projected geo coordinates.
+   * @param {Fit} [fit='contain'] - Whether the viewport should contain or cover the bbox of the warpedMapList.
+   * @param {number} [rotation] - Rotation of the viewport with respect to the projected geo coordinate system. Positive values rotate the viewport positively (i.e. counter-clockwise) w.r.t. the map in projected geo coordinates. This is equivalent to rotating the map negatively (i.e. clockwise) within the viewport.
+   * @param {number} [devicePixelRatio] - The devicePixelRatio of the viewport.
+   * @param {number} [zoom=1] - The zoom on the viewport.
+   * @returns {Viewport} - A new Viewport object.
+   */
+  static fromSizeAndPolygon(
+    viewportSize: Size,
+    projectedGeoPolygon: Polygon,
+    fit: Fit = 'contain',
+    rotation?: number,
+    devicePixelRatio?: number,
+    zoom = 1
+  ): Viewport {
+    const projectedGeoRing = projectedGeoPolygon[0]
+    const rotatedProjectedGeoRing = rotatePoints(
+      projectedGeoRing,
+      rotation ? -rotation : undefined
+    )
+    const rotatedProjectedGeoBbox = computeBbox(rotatedProjectedGeoRing)
+    const rotatedProjectedGeoSize = bboxToSize(rotatedProjectedGeoBbox)
+    const rotatedProjectedGeoCenter = bboxToCenter(rotatedProjectedGeoBbox)
+    const projectedGeoPerViewportScale = sizesToScale(
+      rotatedProjectedGeoSize,
+      viewportSize,
+      fit
+    )
+
+    const projectedGeoCenter = rotatePoint(rotatedProjectedGeoCenter, rotation)
 
     return new Viewport(
       viewportSize,
       projectedGeoCenter,
-      projectedGeoPerViewportScale,
-      0,
+      projectedGeoPerViewportScale * zoom,
+      rotation,
       devicePixelRatio
     )
   }
 
   /**
-   * Static method creates that creates a Viewport from Bbox in projected geospatial coordinates.
+   * Static method that creates a Viewport from a warped map list and a projected geo per viewport scale.
    *
    * @static
    * @template {WarpedMap} W
-   * @param {Size} viewportSize - Size of the viewport in viewport pixels, as [width, height].
-   * @param {WarpedMapList<W>} projectedGeoBbox - A projectedGeoBbox.
+   * @param {number} projectedGeoPerViewportScale - Scale of the viewport, in projected coordinates per viewport pixel.
+   * @param {WarpedMapList<W>} warpedMapList - A WarpedMapList.
+   * @param {string[]} [mapIds] - IDs of the maps to include. Set to 'undefined' to include all maps.
+   * @param {number} [rotation] - Rotation of the viewport with respect to the projected geo coordinate system. Positive values rotate the viewport positively (i.e. counter-clockwise) w.r.t. the map in projected geo coordinates. This is equivalent to rotating the map negatively (i.e. clockwise) within the viewport.
    * @param {number} [devicePixelRatio] - The devicePixelRatio of the viewport.
-   * @param {Fit} [fit='contain'] - Whether the viewport should contain or cover the bbox of the warpedMapList.
-   * @returns {Viewport} - A new Viewport object
+   * @param {number} [zoom] - The zoom on the viewport.
+   * @returns {Viewport} - A new Viewport object.
    */
-  static fromProjectedGeoBbox(
-    viewportSize: Size,
-    projectedGeoBbox: Bbox,
+  static fromScaleAndMaps<W extends WarpedMap>(
+    projectedGeoPerViewportScale: number,
+    warpedMapList: WarpedMapList<W>,
+    mapIds: string[],
+    rotation?: number,
     devicePixelRatio?: number,
-    fit: Fit = 'contain'
-  ) {
-    const projectedGeoCenter = bboxToCenter(projectedGeoBbox)
+    zoom?: number
+  ): Viewport {
+    const projectedGeoConvexHull = warpedMapList.getProjectedConvexHull(mapIds)
 
-    const projectedGeoSize = bboxToSize(projectedGeoBbox)
-    const projectedGeoPerViewportScale = sizesToScale(
-      projectedGeoSize,
-      viewportSize,
-      fit
+    if (!projectedGeoConvexHull) {
+      throw new Error(
+        'WarpedMapList has no projected convex hull. Possibly because it is empty.'
+      )
+    }
+
+    return this.fromScaleAndPolygon(
+      [projectedGeoConvexHull],
+      projectedGeoPerViewportScale,
+      rotation,
+      devicePixelRatio,
+      zoom
+    )
+  }
+
+  /**
+   * Static method that creates a Viewport from a polygon in projected geospatial coordinates and a projected geo per viewport scale.
+   *
+   * @static
+   * @param {Bbox} projectedGeoPolygon - A polygon in projected geospatial coordinates.
+   * @param {number} projectedGeoPerViewportScale - Scale of the viewport, in projected geo coordinates per viewport pixel.
+   * @param {number} [rotation] - Rotation of the viewport with respect to the projected geo coordinate system. Positive values rotate the viewport positively (i.e. counter-clockwise) w.r.t. the map in projected geo coordinates. This is equivalent to rotating the map negatively (i.e. clockwise) within the viewport.
+   * @param {number} [devicePixelRatio] - The devicePixelRatio of the viewport.
+   * @param {number} [zoom=1] - The zoom on the viewport.
+   * @returns {Viewport} - A new Viewport object.
+   */
+  static fromScaleAndPolygon(
+    projectedGeoPolygon: Polygon,
+    projectedGeoPerViewportScale: number,
+    rotation?: number,
+    devicePixelRatio?: number,
+    zoom = 1
+  ): Viewport {
+    const projectedGeoRing = projectedGeoPolygon[0]
+    const viewportRing = scalePoints(
+      rotatePoints(projectedGeoRing, rotation ? -rotation : undefined),
+      1 / projectedGeoPerViewportScale
+    )
+    const viewportBbox = computeBbox(viewportRing)
+    const viewportSize = bboxToSize(viewportBbox)
+    const viewportCenter = bboxToCenter(viewportBbox)
+    const projectedGeoCenter = rotatePoint(
+      scalePoint(viewportCenter, projectedGeoPerViewportScale),
+      rotation
     )
 
     return new Viewport(
       viewportSize,
       projectedGeoCenter,
-      projectedGeoPerViewportScale,
-      0,
+      projectedGeoPerViewportScale * zoom,
+      rotation,
       devicePixelRatio
     )
   }
@@ -258,7 +359,19 @@ export default class Viewport {
       this.viewportCenter[0],
       this.viewportCenter[1],
       1 / this.projectedGeoPerViewportScale,
-      -1 / this.projectedGeoPerViewportScale,
+      -1 / this.projectedGeoPerViewportScale, // '-' for handedness
+      -this.rotation,
+      -this.projectedGeoCenter[0],
+      -this.projectedGeoCenter[1]
+    )
+  }
+
+  private composeProjectedGeoToCanvasTransform(): Transform {
+    return composeTransform(
+      this.canvasCenter[0],
+      this.canvasCenter[1],
+      1 / this.projectedGeoPerCanvasScale,
+      -1 / this.projectedGeoPerCanvasScale, // '-' for handedness
       -this.rotation,
       -this.projectedGeoCenter[0],
       -this.projectedGeoCenter[1]
@@ -282,35 +395,43 @@ export default class Viewport {
       0,
       0,
       2 / this.viewportSize[0],
-      -2 / this.viewportSize[1],
+      -2 / this.viewportSize[1], // '-' for handedness
       0,
       -this.viewportCenter[0],
       -this.viewportCenter[1]
     )
   }
 
-  /** Returns a rotated rectangle in projected geo coordinates */
+  /**
+   * Returns a rectangle in projected geo coordinates
+   *
+   * The rectangle is the result of a horizontal rectangle in Viewport space of size 'viewportSize',
+   * scaled using projectedGeoPerViewportScale, centered,
+   * rotated using 'rotation' and translated to 'projectedGeoCenter'.
+   *
+   * @private
+   * @param {Size} viewportSize
+   * @param {number} projectedGeoPerViewportScale
+   * @param {number} rotation
+   * @param {Point} projectedGeoCenter
+   * @returns {Rectangle}
+   */
   private computeProjectedGeoRectangle(
-    projectedGeoCenter: Point,
+    viewportSize: Size,
     projectedGeoPerViewportScale: number,
     rotation: number,
-    viewportSize: Size
+    projectedGeoCenter: Point
   ): Rectangle {
-    const dx = (projectedGeoPerViewportScale * viewportSize[0]) / 2
-    const dy = (projectedGeoPerViewportScale * viewportSize[1]) / 2
-    const cosRotation = Math.cos(rotation)
-    const sinRotation = Math.sin(rotation)
-    const xCos = dx * cosRotation
-    const xSin = dx * sinRotation
-    const yCos = dy * cosRotation
-    const ySin = dy * sinRotation
-    const x = projectedGeoCenter[0]
-    const y = projectedGeoCenter[1]
-    return [
-      [x - xCos + ySin, y - xSin - yCos],
-      [x - xCos - ySin, y - xSin + yCos],
-      [x + xCos - ySin, y + xSin + yCos],
-      [x + xCos + ySin, y + xSin - yCos]
-    ]
+    const scaled = scaleSize(viewportSize, projectedGeoPerViewportScale)
+    const rectangle = sizeToRectangle(scaled)
+    const centered = translatePoints(
+      rectangle,
+      midPoint(...rectangle),
+      'substract'
+    ) as Rectangle
+    const rotated = rotatePoints(centered, rotation) as Rectangle
+    const translated = translatePoints(rotated, projectedGeoCenter) as Rectangle
+
+    return translated
   }
 }

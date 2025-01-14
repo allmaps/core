@@ -38,21 +38,30 @@ export default class CanvasRenderer
     this.context = canvas.getContext('2d') as CanvasRenderingContext2D
   }
 
-  async render(): Promise<void> {
-    const width = this.canvas.width
-    const height = this.canvas.height
+  /**
+   * Render the map for a given viewport.
+   *
+   * If no viewport is specified, a viewport is deduced based on the WarpedMapList and canvas width and hight.
+   *
+   * @param {Viewport} [viewport] - the viewport to render
+   */
+  async render(viewport?: Viewport): Promise<void> {
+    this.viewport =
+      viewport ||
+      Viewport.fromSizeAndMaps(
+        [this.canvas.width, this.canvas.height],
+        this.warpedMapList
+      )
 
-    this.viewport = Viewport.fromWarpedMapList(
-      [width, height],
-      this.warpedMapList
+    const imageData = new ImageData(
+      this.viewport.canvasSize[0],
+      this.viewport.canvasSize[1]
     )
 
     await Promise.allSettled(this.loadMissingImageInfosInViewport())
 
     this.requestFetchableTiles()
     await this.tileCache.allRequestedTilesLoaded()
-
-    const imageData = new ImageData(width, height)
 
     await renderToIntArray(
       this.warpedMapList,

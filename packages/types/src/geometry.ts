@@ -84,6 +84,16 @@ export type Bbox = [number, number, number, number]
  */
 export type Size = [number, number]
 
+/**
+ * Two ways two rectangles (or shapes in general) can overlap:
+ * - 'contain': The first contains the second
+ * - 'cover': The first is covered by the second
+ *
+ * @export
+ * @typedef {Fit}
+ */
+export type Fit = 'cover' | 'contain'
+
 // TODO: change name to something like 'helmert transformation signature'
 export type Transform = [number, number, number, number, number, number]
 

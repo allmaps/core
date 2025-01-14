@@ -1,10 +1,5 @@
 import { throttle } from 'lodash-es'
 
-import BaseRenderer from './BaseRenderer.js'
-import WebGL2WarpedMap, {
-  createWebGL2WarpedMapFactory
-} from '../maps/WebGL2WarpedMap.js'
-import CachedImageDataTile from '../tilecache/CacheableWorkerImageDataTile.js'
 import {
   hexToFractionalRgb,
   maxOfNumberOrUndefined,
@@ -13,6 +8,11 @@ import {
 import { supportedDistortionMeasures } from '@allmaps/transform'
 import { red, green, darkblue, yellow, black } from '@allmaps/tailwind'
 
+import BaseRenderer from './BaseRenderer.js'
+import WebGL2WarpedMap, {
+  createWebGL2WarpedMapFactory
+} from '../maps/WebGL2WarpedMap.js'
+import CachedImageDataTile from '../tilecache/CacheableWorkerImageDataTile.js'
 import {
   WarpedMapEvent,
   WarpedMapEventType,
@@ -24,6 +24,7 @@ import {
   transformToMatrix4
 } from '../shared/matrix.js'
 import { createShader, createProgram } from '../shared/webgl2.js'
+import Viewport from '../viewport/Viewport.js'
 
 import mapVertexShaderSource from '../shaders/map/vertex-shader.glsl'
 import mapFragmentShaderSource from '../shaders/map/fragment-shader.glsl'
@@ -34,7 +35,6 @@ import pointsFragmentShaderSource from '../shaders/points/fragment-shader.glsl'
 
 import type { DebouncedFunc } from 'lodash-es'
 
-import type Viewport from '../viewport/Viewport.js'
 import type FetchableTile from '../tilecache/FetchableTile.js'
 
 import type {
@@ -586,16 +586,25 @@ export default class WebGL2Renderer
   }
 
   /**
-   * Render the map for a given viewport
+   * Render the map for a given viewport.
    *
-   * @param {Viewport} viewport - the current viewport
+   * If no viewport is specified the current viewport is rerendered.
+   * If no current viewport is known, a viewport is deduced based on the WarpedMapList and canvas width and hight.
+   *
+   * @param {Viewport} [viewport] - the viewport to render
    */
-  render(viewport: Viewport): void {
+  render(viewport?: Viewport): void {
     if (this.disableRender) {
       return
     }
 
-    this.viewport = viewport
+    this.viewport =
+      viewport ||
+      this.viewport ||
+      Viewport.fromSizeAndMaps(
+        [this.gl.canvas.width, this.gl.canvas.width],
+        this.warpedMapList
+      )
 
     // Not awaiting this, using events to trigger new render calls
     this.loadMissingImageInfosInViewport()

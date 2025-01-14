@@ -6,16 +6,33 @@
     <title>@allmaps/render</title>
   </head>
   <body>
-    <canvas id="canvas"></canvas>
+    <h1>Canvas Renderer<h1>
+    <h2>Viewport from size and maps<h2>
+      <canvas id="canvas-canvasrenderer-viewport-from-maps" style="border:solid"></canvas>
+      <h2>Viewport from maps and scale<h2>
+    <canvas id="canvas-canvasrenderer-viewport-from-scale" style="border:solid"></canvas>
     <script type="module">
-      import { CanvasRenderer, Viewport } from './src/index.ts'
+      import { CanvasRenderer, WebGL2Renderer, Viewport } from './src/index.ts'
 
-      async function render() {
+      // Note: Maps with strong warping may appear to not exactly follow the specified viewport.
+      // This is due the backwards transform being explicitly used in the CanvasRenderer (and not in the WebGL2Renderer).
+      // For maps with strong warping, the backwards transform is not exact (even for polynomial transformations).
+      // Example: 'https://annotations.allmaps.org/maps/37af8588be44c256'
+
+      const annotation = await fetch(
+          'https://annotations.allmaps.org/images/9f888622a47479cc'
+        ).then((response) => response.json())
+
+      let projectedGeoPerViewportScale
+      const ratio = window.devicePixelRatio || 1
+      const rotation = 0
+      const zoom = 1
+
+      async function renderCanvasRendererViewportFromSizeAndMaps() {
         const width = 600
         const height = 600
-        const canvas = document.getElementById('canvas')
+        const canvas = document.getElementById('canvas-canvasrenderer-viewport-from-maps')
         const context = canvas.getContext('2d')
-        const ratio = window.devicePixelRatio || 1
         canvas.width = width * ratio
         canvas.height = height * ratio
         canvas.style.width = width + 'px'
@@ -24,15 +41,58 @@
 
         const renderer = new CanvasRenderer(canvas)
 
-        const annotation = await fetch(
-          'https://annotations.allmaps.org/images/4af0fa9c8207b36c'
-        ).then((response) => response.json())
-
         await renderer.addGeoreferenceAnnotation(annotation)
-        await renderer.render()
+
+        const viewport = Viewport.fromSizeAndMaps(
+          [width, height], // viewportSize
+          renderer.warpedMapList, // warpedMapList
+          undefined, // mapIds
+          'contain', // fit
+          rotation, // rotation
+          ratio, // dpr
+          zoom // zoom
+        )
+
+        // Store scale to use again in following example
+        projectedGeoPerViewportScale = viewport.projectedGeoPerViewportScale
+
+        await renderer.render(viewport)
       }
 
-      render()
+      renderCanvasRendererViewportFromSizeAndMaps()
+
+      async function renderCanvasRendererViewportFromMapsAndScale() {
+        const canvas = document.getElementById('canvas-canvasrenderer-viewport-from-scale')
+        const context = canvas.getContext('2d')
+
+        const renderer = new CanvasRenderer(canvas)
+
+        await renderer.addGeoreferenceAnnotation(annotation)
+
+        const viewport = Viewport.fromScaleAndMaps(
+          projectedGeoPerViewportScale, // projectedGeoPerViewportScale
+          renderer.warpedMapList, // warpedMapList
+          undefined, // mapIds
+          rotation, // rotation
+          ratio, // dpr
+          zoom // zoom
+        )
+
+        // Resising canvas because size was computed in viewport
+        canvas.width = viewport.canvasSize[0]
+        canvas.height = viewport.canvasSize[1]
+        canvas.style.width = viewport.viewportSize[0] + 'px'
+        canvas.style.height = viewport.viewportSize[1] + 'px'
+        context.scale(
+          viewport.devicePixelRatio,
+          viewport.devicePixelRatio
+        )
+
+        await renderer.render(viewport)
+      }
+
+      renderCanvasRendererViewportFromMapsAndScale()
+
     </script>
   </body>
 </html>

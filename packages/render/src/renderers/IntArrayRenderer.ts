@@ -47,6 +47,11 @@ export default class IntArrayRenderer<D>
     this.getImageDataSize = getImageDataSize
   }
 
+  /**
+   * Render the map for a given viewport.
+   *
+   * @param {Viewport} viewport - the viewport to render
+   */
   async render(viewport: Viewport): Promise<Uint8ClampedArray> {
     this.viewport = viewport
 
@@ -56,7 +61,7 @@ export default class IntArrayRenderer<D>
     await this.tileCache.allRequestedTilesLoaded()
 
     const intArray = new Uint8ClampedArray(
-      viewport.viewportSize[0] * viewport.viewportSize[1] * CHANNELS
+      this.viewport.canvasSize[0] * this.viewport.canvasSize[1] * CHANNELS
     )
 
     await renderToIntArray(

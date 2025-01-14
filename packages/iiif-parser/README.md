@@ -576,7 +576,7 @@ Returns a Image request object for the requested region and size
 ##### Parameters
 
 *   `size` **SizeObject** Size of the requested thumbnail
-*   `mode` **(`"cover"` | `"contain"`)** Desired fit mode of the requested thumbnail (optional, default `'cover'`)
+*   `mode` **Fit** Desired fit mode of the requested thumbnail (optional, default `'cover'`)
 
 Returns **[ImageRequest](#imagerequest)** Image request object that can be used to fetch the requested thumbnail
 

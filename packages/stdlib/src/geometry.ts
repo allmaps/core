@@ -397,3 +397,98 @@ export function triangleArea(triangle: Triangle): number {
     )
   )
 }
+
+export function invertPoint(point: Point): Point {
+  return [-point[0], -point[1]]
+}
+
+export function scalePoint(point: Point, scale: number): Point {
+  if (scale == 1) {
+    return point
+  }
+
+  return [point[0] * scale, point[1] * scale]
+}
+
+export function scalePoints(points: Point[], scale: number): Point[] {
+  if (scale == 1) {
+    return points
+  }
+  return points.map((point) => scalePoint(point, scale))
+}
+
+export function translatePoint(
+  point: Point,
+  translationPoint: Point,
+  addOrSubstract: 'add' | 'substract' = 'add'
+): Point {
+  if (addOrSubstract == 'add') {
+    return [point[0] + translationPoint[0], point[1] + translationPoint[1]]
+  } else {
+    return [point[0] - translationPoint[0], point[1] - translationPoint[1]]
+  }
+}
+
+export function translatePoints(
+  points: Point[],
+  point: Point,
+  addOrSubstract: 'add' | 'substract' = 'add'
+): Point[] {
+  if (isEqualPoint(point, [0, 0])) {
+    return points
+  }
+
+  return points.map((p) => translatePoint(p, point, addOrSubstract))
+}
+
+export function rotatePoint(
+  point: Point,
+  angle: number = 0,
+  anchor: Point | undefined = undefined,
+  cosAngle?: number,
+  sinAngle?: number
+): Point {
+  if (angle == 0) {
+    return point
+  }
+
+  if (anchor) {
+    return translatePoint(
+      rotatePoint(
+        translatePoint(point, anchor, 'substract'),
+        angle,
+        undefined,
+        cosAngle,
+        sinAngle
+      ),
+      anchor
+    )
+  } else {
+    cosAngle = cosAngle || Math.cos(angle)
+    sinAngle = sinAngle || Math.sin(angle)
+
+    return [
+      point[0] * cosAngle - point[1] * sinAngle,
+      point[0] * sinAngle + point[1] * cosAngle
+    ]
+  }
+}
+
+export function rotatePoints(
+  points: Point[],
+  angle: number = 0,
+  anchor: Point | undefined = undefined,
+  cosAngle?: number,
+  sinAngle?: number
+): Point[] {
+  if (angle == 0) {
+    return points
+  }
+
+  cosAngle = cosAngle || Math.cos(angle)
+  sinAngle = sinAngle || Math.sin(angle)
+
+  return points.map((point) =>
+    rotatePoint(point, angle, anchor, cosAngle, sinAngle)
+  )
+}

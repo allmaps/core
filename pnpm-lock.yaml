@@ -1264,6 +1264,9 @@ importers:
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
+      monotone-chain-convex-hull:
+        specifier: ^1.1.0
+        version: 1.1.0
       rbush:
         specifier: ^3.0.1
         version: 3.0.1
@@ -1377,6 +1380,9 @@ importers:
       '@placemarkio/geojson-rewind':
         specifier: ^1.0.2
         version: 1.0.2
+      monotone-chain-convex-hull:
+        specifier: ^1.1.0
+        version: 1.1.0
       svg-parser:
         specifier: ^2.0.4
         version: 2.0.4
@@ -4975,6 +4981,7 @@ packages:
 
   /@vue/compiler-core@3.5.13:
     resolution: {integrity: sha512-oOdAkwqUfW1WqpwSYJce06wvt6HljgY3fGeM9NcVA1HaYOij3mZG9Rkysn0OHuyUAGMbEbARIpsG+LPVlBJ5/Q==}
+    requiresBuild: true
     dependencies:
       '@babel/parser': 7.26.3
       '@vue/shared': 3.5.13
@@ -10321,6 +10328,10 @@ packages:
     resolution: {integrity: sha512-xV2bxeN6F7oYjZWTe/YPAy6MN2M+sL4u/Rlm2AHCIVGfo2p1yGmBHQ6vHehl4bRTZBdHu3TSkWdYgkwpYzAGSw==}
     engines: {node: '>=0.10.0'}
     dev: true
+
+  /monotone-chain-convex-hull@1.1.0:
+    resolution: {integrity: sha512-iZGaoO2qtqIWaAfscTtsH2LolE06U4JzTw8AgtjT/yzYIA0aoAHDdwBtsesnQXfVRvS375Wu0Y1+FqdI5Y22GA==}
+    dev: false
 
   /mri@1.2.0:
     resolution: {integrity: sha512-tzzskb3bG8LvYGFF/mDTpq3jpI6Q9wc3LEmBaghu+DdCssd1FakN7Bc0hVNmEyGq1bq3RgfkCb3cmQLpNPOroA==}

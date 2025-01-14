@@ -314,7 +314,7 @@ export default abstract class BaseRenderer<
         this.shouldAnticipateInteraction() ? REQUEST_VIEWPORT_BUFFER_RATIO : 0
       )
     const resourceBufferedViewportRing =
-      warpedMap.projectedTransformer.transformBackward(
+      warpedMap.projectedTransformer.transformToResource(
         [projectedGeoBufferedViewportRectangle],
         transformerOptions
       )[0]

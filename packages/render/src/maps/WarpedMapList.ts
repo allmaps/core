@@ -8,7 +8,7 @@ import {
 import RTree from './RTree.js'
 import WarpedMap from './WarpedMap.js'
 
-import { bboxToCenter, combineBboxes } from '@allmaps/stdlib'
+import { bboxToCenter, combineBboxes, convexHull } from '@allmaps/stdlib'
 import { WarpedMapEvent, WarpedMapEventType } from '../shared/events.js'
 
 import type {
@@ -100,7 +100,7 @@ export default class WarpedMapList<W extends WarpedMap> extends EventTarget {
    * @returns {Iterable<W>}
    */
   getWarpedMaps(): Iterable<W>
-  getWarpedMaps(mapIds: Iterable<string>): Iterable<W>
+  getWarpedMaps(mapIds?: Iterable<string>): Iterable<W>
   getWarpedMaps(mapIds?: Iterable<string>): Iterable<W> {
     if (mapIds === undefined) {
       return this.warpedMapsById.values()
@@ -153,43 +153,77 @@ export default class WarpedMapList<W extends WarpedMap> extends EventTarget {
   /**
    * Return the bounding box of all visible maps in this list, in geospatial coordinates ('WGS84', i.e. `[lon, lat]`)
    *
+   * Returns undefined if the list is empty.
+   *
    * @returns {(Bbox | undefined)}
    */
-  getBbox(): Bbox | undefined {
-    let bbox
+  getBbox(mapIds?: Iterable<string>): Bbox | undefined {
+    const bboxes = []
 
-    for (const warpedMap of this.getWarpedMaps()) {
+    for (const warpedMap of this.getWarpedMaps(mapIds)) {
       if (warpedMap.visible) {
-        if (!bbox) {
-          bbox = warpedMap.geoMaskBbox
-        } else {
-          bbox = combineBboxes(bbox, warpedMap.geoMaskBbox)
-        }
+        bboxes.push(warpedMap.geoMaskBbox)
       }
     }
 
-    return bbox
+    return combineBboxes(...bboxes)
   }
 
   /**
    * Return the bounding box of all visible maps in this list, in projected geospatial coordinates
    *
+   * Returns undefined if the list is empty.
+   *
    * @returns {(Bbox | undefined)}
    */
-  getProjectedBbox(): Bbox | undefined {
-    let bbox
+  getProjectedBbox(mapIds?: Iterable<string>): Bbox | undefined {
+    const bboxes = []
 
-    for (const warpedMap of this.getWarpedMaps()) {
+    for (const warpedMap of this.getWarpedMaps(mapIds)) {
       if (warpedMap.visible) {
-        if (!bbox) {
-          bbox = warpedMap.projectedGeoMaskBbox
-        } else {
-          bbox = combineBboxes(bbox, warpedMap.projectedGeoMaskBbox)
-        }
+        bboxes.push(warpedMap.projectedGeoMaskBbox)
       }
     }
 
-    return bbox
+    return combineBboxes(...bboxes)
+  }
+
+  /**
+   * Return the convex hull of all visible maps in this list, in geospatial coordinates ('WGS84', i.e. `[lon, lat]`)
+   *
+   * Returns undefined if the list is empty.
+   *
+   * @returns {(Ring | undefined)}
+   */
+  getConvexHull(mapIds?: Iterable<string>): Ring | undefined {
+    const maskPoints: Point[] = []
+
+    for (const warpedMap of this.getWarpedMaps(mapIds)) {
+      if (warpedMap.visible) {
+        maskPoints.push(...warpedMap.geoMask.coordinates[0])
+      }
+    }
+
+    return convexHull(maskPoints)
+  }
+
+  /**
+   * Return the convex hull of all visible maps in this list, in projected geospatial coordinates
+   *
+   * Returns undefined if the list is empty.
+   *
+   * @returns {(Ring | undefined)}
+   */
+  getProjectedConvexHull(mapIds?: Iterable<string>): Ring | undefined {
+    const maskPoints: Point[] = []
+
+    for (const warpedMap of this.getWarpedMaps(mapIds)) {
+      if (warpedMap.visible) {
+        maskPoints.push(...warpedMap.projectedGeoMask)
+      }
+    }
+
+    return convexHull(maskPoints)
   }
 
   /**
